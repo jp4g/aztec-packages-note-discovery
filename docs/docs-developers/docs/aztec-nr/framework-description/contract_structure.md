@@ -158,5 +158,5 @@ We expect to lift some of these restrictions sometime after the release of Noir 
 ## Next steps
 
 - [Define functions](./functions/index.md) - Learn about private, public, and utility functions
-- [Define storage](./how_to_define_storage.md) - Work with persistent state variables
+- [Define storage](./state_variables.md) - Work with persistent state variables
 - [Compile your contract](../how_to_compile_contract.md) - Build your contract artifact
