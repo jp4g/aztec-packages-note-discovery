@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768364661006,
+  "lastUpdate": 1768368933604,
   "repoUrl": "https://github.com/AztecProtocol/aztec-packages",
   "entries": {
     "Aztec Benchmarks": [
@@ -481699,6 +481699,83 @@ window.BENCHMARK_DATA = {
             "name": "yarn-project/end-to-end/unproven_0.5tps/p99_inclusion",
             "value": 1309,
             "unit": "s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Aztec Bot",
+            "username": "AztecBot",
+            "email": "49558828+AztecBot@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "65d96efe21a8b1293bdda0fc956cf520dcbd2dc8",
+          "message": "feat: merge-train/barretenberg (#19541)\n\nBEGIN_COMMIT_OVERRIDE\nchore: Improve Chonk debug info (#19538)\nchore: translator non-native and decomp relations audit (#19081)\nchore: add safety to derive_generators and tweak pedersen scope (#19525)\nfix: ci-barretenberg-full mode fixes (#19466)\ntest: use WASM backend for bbjs-test acir tests (#19529)\nfix: use absolute path in run_test.sh for CI\nfix: use env_objects in bb-external library\nfix: completeness issue in cycle scalar constructor from bigfield\n(#19475)\nchore: review a few minor files for ultra/mega audit (#19513)\nEND_COMMIT_OVERRIDE",
+          "timestamp": "2026-01-14T03:40:13Z",
+          "url": "https://github.com/AztecProtocol/aztec-packages/commit/65d96efe21a8b1293bdda0fc956cf520dcbd2dc8"
+        },
+        "date": 1768368843805,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/avg_inclusion",
+            "value": 47.95,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/median_inclusion",
+            "value": 47,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/p99_inclusion",
+            "value": 83,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p50",
+            "value": 200.00000000000006,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p95",
+            "value": 481.0267857142858,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 8.75,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 18.833333333333336,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 37.11111111111111,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 163.9999999999999,
+            "unit": "ms"
           }
         ]
       }
