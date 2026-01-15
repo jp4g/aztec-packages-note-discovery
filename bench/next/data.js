@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768443408093,
+  "lastUpdate": 1768454869569,
   "repoUrl": "https://github.com/AztecProtocol/aztec-packages",
   "entries": {
     "Aztec Benchmarks": [
@@ -482085,6 +482085,83 @@ window.BENCHMARK_DATA = {
           {
             "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p95",
             "value": 163.9999999999999,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "ludamad",
+            "username": "ludamad",
+            "email": "adam.domurad@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "fc7d5b6663acebf6adc313362c913d9f8a22e9d0",
+          "message": "fix(ethereum): don't rely on exec'ing in /tmp (#19599)\n\nFixes and unflakes\nsrc/composed/web3signer/e2e_multi_validator_node_key_store.test.ts\n\n- Fix \"Permission denied\" error when deploying L1 contracts in our\ndocker compose scripts due to `/tmp` being mounted as noexec tmpfs\n- Instead of copying solc binary to temp directory, we update\n`foundry.toml` to use absolute path to the original location\n\nIncluded:\n- Copy `test/shouting.t.sol` to appease forge cache warnings about\nmissing source files",
+          "timestamp": "2026-01-15T01:44:03Z",
+          "url": "https://github.com/AztecProtocol/aztec-packages/commit/fc7d5b6663acebf6adc313362c913d9f8a22e9d0"
+        },
+        "date": 1768454794073,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/avg_inclusion",
+            "value": 49.53333333333333,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/median_inclusion",
+            "value": 51,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/p99_inclusion",
+            "value": 83,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p50",
+            "value": 302.27272727272725,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p95",
+            "value": 487.0454545454545,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 12.5,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 93.75,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 66.66666666666666,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 228.35051546391747,
             "unit": "ms"
           }
         ]
