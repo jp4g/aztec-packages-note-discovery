@@ -37,7 +37,7 @@ void FieldGreaterThanTraceBuilder::process(
         int8_t cmp_rng_ctr = event.operation == simulation::FieldGreaterOperation::GREATER_THAN ? 4 : 1;
 
         auto write_row = [&]() {
-            FF cmp_rng_ctr_inv = precomputed_inverses.at(static_cast<size_t>(cmp_rng_ctr));
+            const FF& cmp_rng_ctr_inv = precomputed_inverses.at(static_cast<size_t>(cmp_rng_ctr));
             trace.set(row,
                       { { { C::ff_gt_sel, 1 },
                           { C::ff_gt_a, event.a },
@@ -48,19 +48,19 @@ void FieldGreaterThanTraceBuilder::process(
                           { C::ff_gt_constant_128, 128 },
                           { C::ff_gt_a_lo, a_limbs.lo },
                           { C::ff_gt_a_hi, a_limbs.hi },
-                          { C::ff_gt_p_a_borrow, p_sub_a_witness.borrow },
+                          { C::ff_gt_p_a_borrow, p_sub_a_witness.borrow ? 1 : 0 },
                           { C::ff_gt_p_sub_a_lo, p_sub_a_witness.lo },
                           { C::ff_gt_p_sub_a_hi, p_sub_a_witness.hi },
                           { C::ff_gt_b_lo, b_limbs.lo },
                           { C::ff_gt_b_hi, b_limbs.hi },
-                          { C::ff_gt_p_b_borrow, p_sub_b_witness.borrow },
+                          { C::ff_gt_p_b_borrow, p_sub_b_witness.borrow ? 1 : 0 },
                           { C::ff_gt_p_sub_b_lo, p_sub_b_witness.lo },
                           { C::ff_gt_p_sub_b_hi, p_sub_b_witness.hi },
-                          { C::ff_gt_borrow, res_witness.borrow },
+                          { C::ff_gt_borrow, res_witness.borrow ? 1 : 0 },
                           { C::ff_gt_res_lo, res_witness.lo },
                           { C::ff_gt_res_hi, res_witness.hi },
                           { C::ff_gt_cmp_rng_ctr, cmp_rng_ctr },
-                          { C::ff_gt_sel_shift_rng, cmp_rng_ctr > 0 },
+                          { C::ff_gt_sel_shift_rng, cmp_rng_ctr > 0 ? 1 : 0 },
                           { C::ff_gt_cmp_rng_ctr_inv, cmp_rng_ctr_inv } } });
         };
 

@@ -1,8 +1,76 @@
 include "./range_check.pil";
 
-// This module handles field gt
+// This module handles field greater than (gt) and canonical decomposition of a field element into two 128-bit limbs.
+// We handle both in the same gadget because GT uses the canonical decomposition. of the inputs to constrain the range checks.
 // FF_GT also enables us to support LT (by swapping the inputs of FF_GT) and LTE (by negating the result of GT)
-// Lifecycle table:
+
+// Usage for field GT:
+//
+// sel_caller { a, b, result }
+// in
+// ff_gt.sel_gt { ff_gt.a, ff_gt.b, ff_gt.result };
+//
+// There are no requirements for the inputs.
+// `result` will be constrained to be boolean (a > b?) by this trace.
+
+// Usage for Canonical Decomposition:
+//
+// sel_caller { a, lo, hi }
+// in
+// ff_gt.sel_dec { ff_gt.a, ff_gt.a_lo, ff_gt.a_hi };
+//
+// This trace constrains that a = a_lo + 2^128 * a_hi such that a_lo and a_hi are 128-bit limbs and a does not overflow p.
+
+// WARNING: Never invoke this gadget using the `sel` selector. This is not a valid usage of the gadget.
+
+// === STRATEGY FOR CANONICAL DECOMPOSITION ===
+//
+// The high level approach for proving the canonical decomposition of `a` is:
+// 1. Take a hint of the decomposition of `a` into two limbs `a_lo` and `a_hi`.
+// 2. Constrain that `a_lo` and `a_hi` are 128-bit limbs.
+// 3. Constrain that `a = a_lo + 2^128 * a_hi`. Note that since `a` is a BN254 field (and therefore 254 bits)
+//    in principle `a_lo + 2^128 * a_hi` could overflow p. That is NOT the decomposition we want.
+//    We take care of that in the following steps.
+// 4. Consider the decomposition of the modulus into two limbs `p_lo` and `p_hi` (these are constants known to be 128-bit limbs).
+// 5. Constrain that either:
+//    (a) `(p_lo > a_lo && p_hi >= a_hi)`, or
+//    (b) `(p_lo <= a_lo && p_hi > a_hi)`
+//    holds for range-constrained `a_xx` and `p_xx`.
+
+// === A NOTE ON PROVING x > y FOR RANGE-CONSTRAINED x AND y ===
+//
+// To prove that two range-constrained numbers x, y (e.g., to 128 bits each) are such that x > y,
+// you prove that x - y - 1 does not underflow. That is, you prove that x - y - 1 still fits in 128 bits.
+// So, your witness value (for a later range check) will be x - y - 1, for each pair of limbs.
+//
+// The >= case is handled by removing the `- 1`.
+//
+// Example: consider x = 0 and y = 2^128 - 1. Then x - y - 1 = -2^128 = p - 2^128 > 2^128,
+// which does not fit in 128 bits. Convice yourself of this.
+//
+// Given that we usually have to prove that either (x > y) or !(x > y) we will often either
+// range check (x - y - 1) or (y - x) depending on the expected result.
+
+// === STRATEGY FOR FIELD GT ===
+//
+// The high level approach for proving that (a > b == result) holds is:
+// 1. Prove that `(a_lo, a_hi) = canonical_decomposition(a)`.
+// 2. Prove that `(b_lo, b_hi) = canonical_decomposition(b)`.
+// 3. Prove that either
+//    (a) result = 1 and
+//        (a1) `(a_lo > b_lo && a_hi >= b_hi)`, or
+//        (a2) `(a_lo <= b_lo && a_hi > b_hi)`, or
+//    (b) result = 0 and
+//        (b1) `(b_lo >= a_lo && b_hi >= a_hi)`, or
+//        (b2) `(b_lo < a_lo && b_hi > a_hi)`.
+//
+// It is important to notice that at "witness generation" (or hinting) time, we know which case we are in.
+// As mentioned before, this step involves using a range check over the subtraction of values.
+// TODO(fcarreiro): Explain why we can use just one (well 2) witness to prove both cases.
+
+// WARNING: This is a multi-row gadget.
+
+// Trace lifecycle example:
 // +-----+-----+--------+--------------+--------------+------------+------------+------+------+------------+------------+--------+--------+-------------+-----+--------+---------------+
 // |  a  |  b  | result | a_hi (range) | a_lo (range) | p_sub_a_hi | p_sub_a_lo | b_hi | b_lo | p_sub_b_hi | p_sub_b_lo | res_hi | res_lo | cmp_rng_ctr | sel | sel_gt | sel_shift_rng |
 // +-----+-----+--------+--------------+--------------+------------+------------+------+------+------------+------------+--------+--------+-------------+-----+--------+---------------+
@@ -14,27 +82,12 @@ include "./range_check.pil";
 // | unc | unc | unc    | 0            | 1            | unc        | unc        | unc  | unc  | unc        | unc        | unc    | unc    |           0 |   1 |      0 |             0 |
 // | 0   | 0   | 0      | 0            | 0            | 0          | 0          | 0    | 0    | 0          | 0          | 0      | 0      |           0 |   0 |      0 |             0 |
 // +-----+-----+--------+--------------+--------------+------------+------------+------+------+------------+------------+--------+--------+-------------+-----+--------+---------------+
-//
-// This trace should be looked up with the tuple (a,b,result,sel_gt)
 
+// TODO(fcarreiro): Add separate example using sel_dec.
 // This gadget provides a second functionality: Canonical decomposition of a field element into two 128-bit limbs.
 // This consists in proving that a = a_lo + 2^128 * a_hi is a 128-bit decomposition of a which does not overflow p.
 // This corresponds to the first 2 rows of the table above.
 // Note that the first 4 rows of FF_GT computation consists in such a canonical decomposition over a and b.
-
-// Usage for FF_GT:
-//
-// sel_caller { a, b, result }
-// in
-// ff_gt.sel_gt { ff_gt.a, ff_gt.b, ff_gt.result };
-//
-// Usage for Canonical decomposition:
-//
-// sel_caller { a, lo, hi }
-// in
-// ff_gt.sel_dec { ff_gt.a, ff_gt.a_lo, ff_gt.a_hi };
-
-// WARNING: Never invoke FF_GT with `sel` selector. This is not a valid usage of the gadget.
 
 namespace ff_gt;
     pol commit sel; // @boolean
@@ -65,8 +118,8 @@ namespace ff_gt;
     sel * (128 - constant_128) = 0;
 
     pol POW_128 = 2 ** 128;
-    pol P_LO = 53438638232309528389504892708671455233; // Lower 128 bits of p
-    pol P_HI = 64323764613183177041862057485226039389; // Upper 128 bits of p
+    pol P_LO = 53438638232309528389504892708671455233; // Lower 128 bits of p (the BN254 modulus)
+    pol P_HI = 64323764613183177041862057485226039389; // Upper 128 bits of p (the BN254 modulus)
 
     // ========= A DECOMPOSITION =========
 
