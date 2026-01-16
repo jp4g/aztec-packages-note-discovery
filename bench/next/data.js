@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768517387757,
+  "lastUpdate": 1768541315177,
   "repoUrl": "https://github.com/AztecProtocol/aztec-packages",
   "entries": {
     "Aztec Benchmarks": [
@@ -483272,6 +483272,83 @@ window.BENCHMARK_DATA = {
           {
             "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p95",
             "value": 228.35051546391747,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Santiago Palladino",
+            "username": "spalladino",
+            "email": "spalladino@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "b277e39763e387281dc15cc1905f485c0896dc7c",
+          "message": "chore: remove some flaky sleeps from unit tests (#19649)\n\nRefactors some (not all) unit tests to remove sleeps in favor of either\n`retryUntil` or calling event handlers directly (to avoid having to\nsleep while the handler was executed). Also introduces a\n`retryFastUntil` wrapper that calls `retryUntil` with faster interval\nand a short timeout.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+          "timestamp": "2026-01-15T22:10:59Z",
+          "url": "https://github.com/AztecProtocol/aztec-packages/commit/b277e39763e387281dc15cc1905f485c0896dc7c"
+        },
+        "date": 1768541234118,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/avg_inclusion",
+            "value": 49.61666666666667,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/median_inclusion",
+            "value": 50,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/p99_inclusion",
+            "value": 84,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p50",
+            "value": 220.53571428571428,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p95",
+            "value": 478.6317567567568,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 5.882352941176471,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 20,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 38.63905325443786,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 107.49999999999967,
             "unit": "ms"
           }
         ]
