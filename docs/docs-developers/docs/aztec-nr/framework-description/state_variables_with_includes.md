@@ -143,25 +143,7 @@ A `PublicImmutable`'s storage **must** only be set once via `initialize`. Attemp
 
 Returns the stored immutable value. This function is available in public, private and utility contexts.
 
-```rust
-// In public
-#[external("public")]
-fn get_name() -> FieldCompressedString {
-    self.storage.name.read()
-}
-
-// In private (reads from historical state)
-#[external("private")]
-fn get_name_private() -> FieldCompressedString {
-    self.storage.name.read()
-}
-
-// In utility
-#[external("utility")]
-unconstrained fn get_name_unconstrained() -> FieldCompressedString {
-    self.storage.name.read()
-}
-```
+#include_code public_immutable_read /noir-projects/noir-contracts/contracts/app/token_contract/src/main.nr rust
 
 ### DelayedPublicMutable
 
@@ -177,16 +159,7 @@ Unlike other state variables, `DelayedPublicMutable` receives not only a type pa
 
 Here's an example from the Auth contract:
 
-```rust
-// Authorizing a new address has a certain delay before it goes into effect. Set to 180 seconds which is 5 slots.
-pub(crate) global CHANGE_AUTHORIZED_DELAY: u64 = 180;
-
-#[storage]
-struct Storage<Context> {
-    admin: PublicImmutable<AztecAddress, Context>,
-    authorized: DelayedPublicMutable<AztecAddress, CHANGE_AUTHORIZED_DELAY, Context>,
-}
-```
+#include_code delayed_public_mutable_storage /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 Recommended standard delays:
 - 12 hours = 43200 seconds - Time-sensitive operations
@@ -197,13 +170,7 @@ Recommended standard delays:
 
 This is the means by which a `DelayedPublicMutable` variable mutates its contents. It schedules a value change for the variable at a future timestamp after the `DELAY` has elapsed.
 
-```rust
-#[external("public")]
-fn set_authorized(authorized: AztecAddress) {
-    assert_eq(self.storage.admin.read(), self.msg_sender().unwrap(), "caller is not admin");
-    self.storage.authorized.schedule_value_change(authorized);
-}
-```
+#include_code schedule_value_change /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 #### `get_current_value`
 
@@ -213,13 +180,7 @@ Returns the current value in a public, private or utility execution context.
 
 Reading in private automatically constrains the transaction to be included within the validity window:
 
-```rust
-#[external("private")]
-fn do_private_authorized_thing() {
-    let authorized = self.storage.authorized.get_current_value();
-    assert_eq(authorized, self.msg_sender().unwrap(), "caller is not authorized");
-}
-```
+#include_code get_current_value_private /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 :::warning Privacy Consideration
 
@@ -231,9 +192,7 @@ Reading `DelayedPublicMutable` in private sets the `include_by_timestamp` proper
 
 Returns the scheduled value and when it takes effect:
 
-```rust
-let (scheduled_value, effective_timestamp) = self.storage.authorized.get_scheduled_value();
-```
+#include_code get_scheduled_value /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 ## Private State Variables
 
@@ -362,24 +321,11 @@ For contract-wide private values (not per-owner), use `SinglePrivateMutable` or 
 
 Since there's only one value at the storage slot, there's no need to specify an owner to look it up:
 
-```rust
-#[storage]
-struct Storage<Context> {
-    admin: SinglePrivateMutable<AddressNote, Context>,
-    config: SinglePrivateImmutable<ConfigNote, Context>,
-}
-
-// Access directly without .at(owner)
-let note_message = self.storage.admin.get_note();
-let config = self.storage.config.get_note();
-```
+#include_code single_private_immutable_storage /noir-projects/noir-contracts/contracts/app/escrow_contract/src/main.nr rust
 
 When initializing, you still pass an owner address - but this specifies who can decrypt the note, not the storage location:
 
-```rust
-// owner_address determines who can see the note, not where it's stored
-self.storage.admin.initialize(note, owner_address).deliver(MessageDelivery.ONCHAIN_CONSTRAINED);
-```
+#include_code single_private_immutable_initialize /noir-projects/noir-contracts/contracts/app/escrow_contract/src/main.nr rust
 
 :::warning
 
@@ -407,14 +353,13 @@ Use the `.at()` method to access values by key:
 
 This is equivalent to Solidity's `public_balances[account]` pattern.
 
-Maps can contain other maps for multi-dimensional lookups:
+Maps can contain other maps for multi-dimensional lookups. For example, the voting contract uses nested maps to track votes for each candidate in each election:
 
-```rust
-// Map game_id -> player_address -> score
-games: Map<Field, Map<AztecAddress, PublicMutable<u32, Context>, Context>, Context>,
+#include_code storage_struct /noir-projects/noir-contracts/contracts/app/private_voting_contract/src/main.nr rust
 
-// Access: self.storage.games.at(game_id).at(player).read()
-```
+Access nested maps by chaining `.at()` calls:
+
+#include_code nested_map_access /noir-projects/noir-contracts/contracts/app/private_voting_contract/src/main.nr rust
 
 :::note
 
@@ -436,36 +381,13 @@ Both `PublicMutable` and `PublicImmutable` are generic over any serializable typ
 
 To use a custom struct in public storage, it must implement the `Packable` trait:
 
-```rust
-use dep::aztec::protocol_types::{
-    address::AztecAddress,
-    traits::{Deserialize, Packable, Serialize}
-};
-
-#[derive(Deserialize, Packable, Serialize)]
-pub struct Asset {
-    pub interest_accumulator: u128,
-    pub last_updated_ts: u64,
-    pub loan_to_value: u128,
-    pub oracle: AztecAddress,
-}
-```
+#include_code custom_struct_in_storage /noir-projects/noir-contracts/contracts/app/lending_contract/src/asset.nr rust
 
 ### Store and Use Custom Structs
 
-```rust
-#[storage]
-struct Storage<Context> {
-    assets: Map<Field, PublicMutable<Asset, Context>, Context>,
-}
+#include_code custom_struct_storage_map /noir-projects/noir-contracts/contracts/app/lending_contract/src/main.nr rust
 
-#[external("public")]
-fn update_asset(asset_id: Field, new_accumulator: u128) {
-    let mut asset = self.storage.assets.at(asset_id).read();
-    asset.interest_accumulator = new_accumulator;
-    self.storage.assets.at(asset_id).write(asset);
-}
-```
+#include_code custom_struct_read_write /noir-projects/noir-contracts/contracts/app/lending_contract/src/main.nr rust
 
 ## Storage Slots
 
