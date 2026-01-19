@@ -1,26 +1,26 @@
 import { type BlockNumber, CheckpointNumber } from '@aztec/foundation/branded-types';
 import { Fr } from '@aztec/foundation/curves/bn254';
 import { Timer } from '@aztec/foundation/timer';
-import type { FunctionsOf } from '@aztec/foundation/types';
 import { L2BlockNew } from '@aztec/stdlib/block';
 import { Checkpoint } from '@aztec/stdlib/checkpoint';
 import { Gas } from '@aztec/stdlib/gas';
-import type { FullNodeBlockBuilderConfig, PublicProcessorLimits } from '@aztec/stdlib/interfaces/server';
+import type {
+  BuildBlockInCheckpointResult,
+  FullNodeBlockBuilderConfig,
+  ICheckpointBlockBuilder,
+  ICheckpointsBuilder,
+  MerkleTreeWriteOperations,
+  PublicProcessorLimits,
+} from '@aztec/stdlib/interfaces/server';
 import { CheckpointHeader } from '@aztec/stdlib/rollup';
 import { makeAppendOnlyTreeSnapshot } from '@aztec/stdlib/testing';
 import type { CheckpointGlobalVariables, Tx } from '@aztec/stdlib/tx';
-
-import type {
-  BuildBlockInCheckpointResult,
-  CheckpointBuilder,
-  FullNodeCheckpointsBuilder,
-} from '../sequencer/checkpoint_builder.js';
 
 /**
  * A fake CheckpointBuilder for testing that implements the same interface as the real one.
  * Can be seeded with blocks to return sequentially on each `buildBlock` call.
  */
-export class MockCheckpointBuilder implements FunctionsOf<CheckpointBuilder> {
+export class MockCheckpointBuilder implements ICheckpointBlockBuilder {
   private blocks: L2BlockNew[] = [];
   private builtBlocks: L2BlockNew[] = [];
   private usedTxsPerBlock: Tx[][] = [];
@@ -105,6 +105,7 @@ export class MockCheckpointBuilder implements FunctionsOf<CheckpointBuilder> {
       blockBuildingTimer: new Timer(),
       usedTxs,
       failedTxs: [],
+      usedTxBlobFields: block?.body?.txEffects?.reduce((sum, tx) => sum + tx.getNumBlobFields(), 0) ?? 0,
     });
   }
 
@@ -181,7 +182,7 @@ export class MockCheckpointBuilder implements FunctionsOf<CheckpointBuilder> {
  * as FullNodeCheckpointsBuilder. Returns MockCheckpointBuilder instances.
  * Does NOT use jest mocks - this is a proper test double.
  */
-export class MockCheckpointsBuilder implements FunctionsOf<FullNodeCheckpointsBuilder> {
+export class MockCheckpointsBuilder implements ICheckpointsBuilder {
   private checkpointBuilder: MockCheckpointBuilder | undefined;
 
   /** Track calls for assertions */
@@ -189,6 +190,14 @@ export class MockCheckpointsBuilder implements FunctionsOf<FullNodeCheckpointsBu
     checkpointNumber: CheckpointNumber;
     constants: CheckpointGlobalVariables;
     l1ToL2Messages: Fr[];
+    previousCheckpointOutHashes: Fr[];
+  }> = [];
+  public openCheckpointCalls: Array<{
+    checkpointNumber: CheckpointNumber;
+    constants: CheckpointGlobalVariables;
+    l1ToL2Messages: Fr[];
+    previousCheckpointOutHashes: Fr[];
+    existingBlocks: L2BlockNew[];
   }> = [];
   public updateConfigCalls: Array<Partial<FullNodeBlockBuilderConfig>> = [];
 
@@ -218,6 +227,15 @@ export class MockCheckpointsBuilder implements FunctionsOf<FullNodeCheckpointsBu
     return this.checkpointBuilder;
   }
 
+  getConfig(): FullNodeBlockBuilderConfig {
+    return {
+      l1GenesisTime: 0n,
+      slotDuration: 24,
+      l1ChainId: 1,
+      rollupVersion: 1,
+    };
+  }
+
   updateConfig(config: Partial<FullNodeBlockBuilderConfig>): void {
     this.updateConfigCalls.push(config);
   }
@@ -226,22 +244,52 @@ export class MockCheckpointsBuilder implements FunctionsOf<FullNodeCheckpointsBu
     checkpointNumber: CheckpointNumber,
     constants: CheckpointGlobalVariables,
     l1ToL2Messages: Fr[],
-    _fork: unknown,
-  ): Promise<CheckpointBuilder> {
-    this.startCheckpointCalls.push({ checkpointNumber, constants, l1ToL2Messages });
+    previousCheckpointOutHashes: Fr[],
+    _fork: MerkleTreeWriteOperations,
+  ): Promise<ICheckpointBlockBuilder> {
+    this.startCheckpointCalls.push({ checkpointNumber, constants, l1ToL2Messages, previousCheckpointOutHashes });
 
     if (!this.checkpointBuilder) {
       // Auto-create a builder if none was set
       this.checkpointBuilder = new MockCheckpointBuilder(constants, checkpointNumber);
     }
 
-    return Promise.resolve(this.checkpointBuilder as unknown as CheckpointBuilder);
+    return Promise.resolve(this.checkpointBuilder);
+  }
+
+  openCheckpoint(
+    checkpointNumber: CheckpointNumber,
+    constants: CheckpointGlobalVariables,
+    l1ToL2Messages: Fr[],
+    previousCheckpointOutHashes: Fr[],
+    _fork: MerkleTreeWriteOperations,
+    existingBlocks: L2BlockNew[] = [],
+  ): Promise<ICheckpointBlockBuilder> {
+    this.openCheckpointCalls.push({
+      checkpointNumber,
+      constants,
+      l1ToL2Messages,
+      previousCheckpointOutHashes,
+      existingBlocks,
+    });
+
+    if (!this.checkpointBuilder) {
+      // Auto-create a builder if none was set
+      this.checkpointBuilder = new MockCheckpointBuilder(constants, checkpointNumber);
+    }
+
+    return Promise.resolve(this.checkpointBuilder);
+  }
+
+  getFork(_blockNumber: BlockNumber): Promise<MerkleTreeWriteOperations> {
+    throw new Error('MockCheckpointsBuilder.getFork not implemented');
   }
 
   /** Reset for reuse in another test */
   reset(): void {
     this.checkpointBuilder = undefined;
     this.startCheckpointCalls = [];
+    this.openCheckpointCalls = [];
     this.updateConfigCalls = [];
   }
 }

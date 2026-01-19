@@ -11,6 +11,7 @@ import { CompleteAddress, type ContractInstanceWithAddress } from '@aztec/stdlib
 import type { AztecNode } from '@aztec/stdlib/interfaces/server';
 import { deriveKeys } from '@aztec/stdlib/keys';
 import { Note, NoteDao } from '@aztec/stdlib/note';
+import { makeL2Tips } from '@aztec/stdlib/testing';
 import { BlockHeader, GlobalVariables, TxHash } from '@aztec/stdlib/tx';
 
 import { mock } from 'jest-mock-extended';
@@ -74,9 +75,7 @@ describe('Utility Execution test suite', () => {
     senderAddressBookStore.getSenders.mockResolvedValue([]);
 
     // Mock getL2Tips and getBlockHeader for loadPrivateLogsForSenderRecipientPair
-    aztecNode.getL2Tips.mockResolvedValue({
-      finalized: { number: anchorBlockHeader.globalVariables.blockNumber },
-    } as any);
+    aztecNode.getL2Tips.mockResolvedValue(makeL2Tips(anchorBlockHeader.globalVariables.blockNumber));
     aztecNode.getBlockHeader.mockImplementation((blockNumber: BlockNumber | 'latest') => {
       if (blockNumber === 'latest') {
         return Promise.resolve(anchorBlockHeader);
@@ -159,7 +158,7 @@ describe('Utility Execution test suite', () => {
     });
     noteStore.getNotes.mockResolvedValue(
       notes.map(
-        (note, index) =>
+        note =>
           new NoteDao(
             note,
             contractAddress,
@@ -172,7 +171,8 @@ describe('Utility Execution test suite', () => {
             TxHash.random(),
             BlockNumber(42),
             L2BlockHash.random().toString(),
-            BigInt(index),
+            0,
+            0,
           ),
       ),
     );
@@ -227,36 +227,10 @@ describe('Utility Execution test suite', () => {
     });
 
     describe('Respects synced block number', () => {
-      let nullifier: Fr;
-      let leafSlot: Fr;
-
-      beforeEach(() => {
-        leafSlot = Fr.random();
-        nullifier = Fr.random();
-      });
-
-      it('throws when getting low nullifier membership witness for future block', async () => {
-        await expect(
-          utilityExecutionOracle.utilityGetLowNullifierMembershipWitness(BlockNumber(syncedBlockNumber + 1), nullifier),
-        ).rejects.toThrow(`Block number ${syncedBlockNumber + 1} is higher than current block ${syncedBlockNumber}`);
-      });
-
       it('throws when getting block for future block number', async () => {
         await expect(utilityExecutionOracle.utilityGetBlockHeader(BlockNumber(syncedBlockNumber + 1))).rejects.toThrow(
           `Block number ${syncedBlockNumber + 1} is higher than current block ${syncedBlockNumber}`,
         );
-      });
-
-      it('throws when getting public data witness for future block', async () => {
-        await expect(
-          utilityExecutionOracle.utilityGetPublicDataWitness(BlockNumber(syncedBlockNumber + 1), leafSlot),
-        ).rejects.toThrow(`Block number ${syncedBlockNumber + 1} is higher than current block ${syncedBlockNumber}`);
-      });
-
-      it('throws when getting public storage for future block', async () => {
-        await expect(
-          utilityExecutionOracle.utilityStorageRead(contractAddress, leafSlot, BlockNumber(syncedBlockNumber + 1), 1),
-        ).rejects.toThrow(`Block number ${syncedBlockNumber + 1} is higher than current block ${syncedBlockNumber}`);
       });
     });
   });

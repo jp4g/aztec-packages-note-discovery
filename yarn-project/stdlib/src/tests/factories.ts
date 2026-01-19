@@ -43,7 +43,7 @@ import {
   VK_TREE_HEIGHT,
 } from '@aztec/constants';
 import { type FieldsOf, makeTuple } from '@aztec/foundation/array';
-import { BlockNumber, SlotNumber } from '@aztec/foundation/branded-types';
+import { BlockNumber, CheckpointNumber, SlotNumber } from '@aztec/foundation/branded-types';
 import { compact } from '@aztec/foundation/collection';
 import { Grumpkin } from '@aztec/foundation/crypto/grumpkin';
 import { poseidon2HashWithSeparator } from '@aztec/foundation/crypto/poseidon';
@@ -87,7 +87,7 @@ import {
 import { PublicDataRead } from '../avm/public_data_read.js';
 import { PublicDataWrite } from '../avm/public_data_write.js';
 import { AztecAddress } from '../aztec-address/index.js';
-import { L2BlockHeader } from '../block/l2_block_header.js';
+import type { L2Tips } from '../block/l2_block_source.js';
 import {
   type ContractClassPublic,
   ContractDeploymentData,
@@ -849,7 +849,8 @@ export function makeCheckpointRollupPublicInputs(seed = 0) {
     makeEpochConstantData(seed),
     makeAppendOnlyTreeSnapshot(seed + 0x100),
     makeAppendOnlyTreeSnapshot(seed + 0x200),
-    makeTuple(AZTEC_MAX_EPOCH_DURATION, () => fr(seed), 0x300),
+    makeAppendOnlyTreeSnapshot(seed + 0x300),
+    makeAppendOnlyTreeSnapshot(seed + 0x350),
     makeTuple(AZTEC_MAX_EPOCH_DURATION, () => fr(seed), 0x400),
     makeTuple(AZTEC_MAX_EPOCH_DURATION, () => makeFeeRecipient(seed), 0x500),
     makeBlobAccumulator(seed + 0x600),
@@ -909,40 +910,20 @@ export function makeBlockHeader(
   });
 }
 
-export function makeL2BlockHeader(
-  seed = 0,
-  blockNumber?: number,
-  slotNumber?: number,
-  overrides: Partial<FieldsOf<L2BlockHeader>> = {},
-) {
-  return new L2BlockHeader(
-    makeAppendOnlyTreeSnapshot(seed + 0x100),
-    overrides?.blobsHash ?? fr(seed + 0x200),
-    overrides?.inHash ?? fr(seed + 0x300),
-    overrides?.state ?? makeStateReference(seed + 0x600),
-    makeGlobalVariables((seed += 0x700), {
-      ...(blockNumber !== undefined ? { blockNumber: BlockNumber(blockNumber) } : {}),
-      ...(slotNumber !== undefined ? { slotNumber: SlotNumber(slotNumber) } : {}),
-    }),
-    new Fr(seed + 0x800),
-    new Fr(seed + 0x900),
-    new Fr(seed + 0xa00),
-    new Fr(seed + 0xb00),
-  );
-}
-
-export function makeCheckpointHeader(seed = 0) {
+export function makeCheckpointHeader(seed = 0, overrides: Partial<FieldsOf<CheckpointHeader>> = {}) {
   return CheckpointHeader.from({
     lastArchiveRoot: fr(seed + 0x100),
     blockHeadersHash: fr(seed + 0x150),
     blobsHash: fr(seed + 0x200),
     inHash: fr(seed + 0x210),
+    epochOutHash: fr(seed + 0x220),
     slotNumber: SlotNumber(seed + 0x300),
     timestamp: BigInt(seed + 0x400),
     coinbase: makeEthAddress(seed + 0x500),
     feeRecipient: makeAztecAddress(seed + 0x600),
     gasFees: makeGasFees(seed + 0x700),
     totalManaUsed: fr(seed + 0x800),
+    ...overrides,
   });
 }
 
@@ -1735,4 +1716,44 @@ export async function randomTxScopedPublicL2Log(opts?: {
     opts?.noteHashes ?? [Fr.random(), Fr.random()],
     opts?.firstNullifier ?? Fr.random(),
   );
+}
+
+/**
+ * Creates L2Tips with all tips pointing to the same block number.
+ * Useful for mocking aztecNode.getL2Tips() in tests.
+ * @param blockNumber - The block number to use for all tips.
+ * @param hash - Optional hash for the block (defaults to empty string).
+ * @param checkpointNumber - Optional checkpoint number (defaults to blockNumber).
+ * @param checkpointHash - Optional checkpoint hash (defaults to block hash).
+ * @returns L2Tips object with all tips at the same block.
+ */
+export function makeL2Tips(
+  blockNumber: number | BlockNumber,
+  hash = '',
+  checkpointNumber?: number | CheckpointNumber,
+  checkpointHash?: string,
+): L2Tips {
+  const bn = typeof blockNumber === 'number' ? BlockNumber(blockNumber) : blockNumber;
+  const cpn =
+    checkpointNumber !== undefined
+      ? typeof checkpointNumber === 'number'
+        ? CheckpointNumber(checkpointNumber)
+        : checkpointNumber
+      : CheckpointNumber(bn);
+  const cph = checkpointHash ?? hash;
+  return {
+    proposed: { number: bn, hash },
+    checkpointed: {
+      block: { number: bn, hash },
+      checkpoint: { number: cpn, hash: cph },
+    },
+    proven: {
+      block: { number: bn, hash },
+      checkpoint: { number: cpn, hash: cph },
+    },
+    finalized: {
+      block: { number: bn, hash },
+      checkpoint: { number: cpn, hash: cph },
+    },
+  };
 }

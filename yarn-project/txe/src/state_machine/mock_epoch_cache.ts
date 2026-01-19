@@ -12,6 +12,7 @@ export class MockEpochCache implements EpochCacheInterface {
       committee: undefined,
       seed: 0n,
       epoch: EpochNumber.ZERO,
+      isEscapeHatchOpen: false,
     });
   }
 
@@ -52,6 +53,10 @@ export class MockEpochCache implements EpochCacheInterface {
       currentSlot: SlotNumber(0),
       nextSlot: SlotNumber(0),
     });
+  }
+
+  getProposerAttesterAddressInSlot(_slot: SlotNumber): Promise<EthAddress | undefined> {
+    return Promise.resolve(undefined);
   }
 
   isInCommittee(_slot: SlotTag, _validator: EthAddress): Promise<boolean> {
