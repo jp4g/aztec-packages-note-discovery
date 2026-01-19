@@ -44,13 +44,24 @@ contract MyContract {
 
 In Aztec.nr, we define a [`struct`](https://noir-lang.org/docs/noir/concepts/data_types/structs) that holds _all_ state variables. This struct is called **the storage struct**, and it is identified by having the `#[storage]` macro applied to it.
 
+```rust
+use aztec::macros::aztec;
+
+#[aztec]
+contract MyContract {
+    use aztec::macros::storage;
+
+    #[storage]
+    struct Storage<C> {
+        // state variables go here e.g, the admin of the contract
+        admin: PublicMutable<AztecAddress, C>,
+    }
+}
+```
+
 The storage struct can have _any_ name, but it is _typically_ named `Storage`. This struct must also have a generic type called `C` or `Context` - this is an unfortunate boilerplate parameter that provides execution mode information.
 
 The `#[storage]` macro can only be used once so all contract state must be in a **single** struct.
-
-Here's an example from the Token contract showing different types of state variables:
-
-#include_code storage_struct /noir-projects/noir-contracts/contracts/app/token_contract/src/main.nr rust
 
 ### Accessing Storage
 
@@ -109,19 +120,45 @@ It **cannot be read or written to privately**, but it is possible to call privat
 
 Store mutable public state using `PublicMutable<T>` for values that need to be updated throughout the contract's lifecycle.
 
-#include_code public_storage /docs/examples/contracts/bob_token_contract/src/main.nr rust
+```rust
+#[storage]
+struct Storage<Context> {
+    admin: PublicMutable<AztecAddress, Context>,
+    total_supply: PublicMutable<u128, Context>,
+}
+```
 
-:::note
+To add a group of `authorized_users` that are able to perform actions in our contract in public storage:
 
-Unlike private state which must be explicitly initialized, uninitialized `PublicMutable` returns the default value (zero for numbers, empty for addresses). This matches Ethereum's behavior.
+```rust
+#[storage]
+struct Storage<Context> {
+    authorized_users: Map<AztecAddress, PublicMutable<bool, Context>, Context>,
+}
+```
 
-:::
+#### `read`
 
-#### `read` and `write`
+`PublicMutable` variables have a `read` method to read the value at the location in storage:
 
-Example of reading and writing to a `PublicMutable` variable:
+```rust
+#[external("public")]
+fn check_admin() {
+    let admin = self.storage.admin.read();
+    assert(admin == self.msg_sender().unwrap(), "caller is not admin");
+}
+```
 
-#include_code mint_public /docs/examples/contracts/bob_token_contract/src/main.nr rust
+#### `write`
+
+The `write` method on `PublicMutable` variables takes the value to write as an input and saves this in storage:
+
+```rust
+#[external("public")]
+fn set_admin(new_admin: AztecAddress) {
+    self.storage.admin.write(new_admin);
+}
+```
 
 ### PublicImmutable
 
@@ -129,11 +166,25 @@ Example of reading and writing to a `PublicMutable` variable:
 
 Due to the value being immutable, it is also possible to read it during private execution - once a circuit proves that the value was set in the past, it knows it cannot have possibly changed. This makes this state variable suitable for immutable public contract configuration or one-off public actions, such as whether a user has signed up or not.
 
-#### Declaration and `initialize`
+#### Declaration
 
-Here's an example from the Token contract initializing `PublicImmutable` variables in the constructor:
+```rust
+#[storage]
+struct Storage<Context> {
+    contract_version: PublicImmutable<u32, Context>,
+}
+```
 
-#include_code constructor /noir-projects/noir-contracts/contracts/app/token_contract/src/main.nr rust
+#### `initialize`
+
+This function sets the immutable value. It can only be called once.
+
+```rust
+#[external("public")]
+fn initialize_version(version: u32) {
+    self.storage.contract_version.initialize(version);
+}
+```
 
 :::warning
 A `PublicImmutable`'s storage **must** only be set once via `initialize`. Attempting to override this by manually accessing the underlying storage slots breaks all properties of the data structure, rendering it useless.
@@ -144,22 +195,9 @@ A `PublicImmutable`'s storage **must** only be set once via `initialize`. Attemp
 Returns the stored immutable value. This function is available in public, private and utility contexts.
 
 ```rust
-// In public
 #[external("public")]
-fn get_name() -> FieldCompressedString {
-    self.storage.name.read()
-}
-
-// In private (reads from historical state)
-#[external("private")]
-fn get_name_private() -> FieldCompressedString {
-    self.storage.name.read()
-}
-
-// In utility
-#[external("utility")]
-unconstrained fn get_name_unconstrained() -> FieldCompressedString {
-    self.storage.name.read()
+fn get_version() -> u32 {
+    self.storage.contract_version.read()
 }
 ```
 
@@ -176,20 +214,13 @@ The existence of minimum delays means that a private function that reads a publi
 Unlike other state variables, `DelayedPublicMutable` receives not only a type parameter for the underlying datatype, but also a `DELAY` type parameter with the value change delay as a number of seconds.
 
 ```rust
-// Authorizing a new address has a certain delay before it goes into effect. Set to 180 seconds which is 5 slots.
-pub(crate) global CHANGE_AUTHORIZED_DELAY: u64 = 180;
+global MY_DELAY: u32 = 3600; // 1 hour delay
 
 #[storage]
 struct Storage<Context> {
-    admin: PublicImmutable<AztecAddress, Context>,
-    authorized: DelayedPublicMutable<AztecAddress, CHANGE_AUTHORIZED_DELAY, Context>,
+    swap_fee: DelayedPublicMutable<u128, MY_DELAY, Context>,
 }
 ```
-
-Recommended standard delays:
-- 12 hours = 43200 seconds - Time-sensitive operations
-- 5 days = 432000 seconds - Standard operations
-- 2 weeks = 1209600 seconds - Operations requiring lengthy public scrutiny
 
 #### `schedule_value_change`
 
@@ -197,9 +228,9 @@ This is the means by which a `DelayedPublicMutable` variable mutates its content
 
 ```rust
 #[external("public")]
-fn set_authorized(authorized: AztecAddress) {
-    assert_eq(self.storage.admin.read(), self.msg_sender().unwrap(), "caller is not admin");
-    self.storage.authorized.schedule_value_change(authorized);
+fn set_swap_fee(new_fee: u128) {
+    assert(self.storage.admin.read() == self.msg_sender().unwrap(), "caller is not admin");
+    self.storage.swap_fee.schedule_value_change(new_fee);
 }
 ```
 
@@ -207,22 +238,16 @@ fn set_authorized(authorized: AztecAddress) {
 
 Returns the current value in a public, private or utility execution context.
 
-#include_code public_getter /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
-
-Reading in private automatically constrains the transaction to be included within the validity window:
-
 ```rust
 #[external("private")]
-fn do_private_authorized_thing() {
-    let authorized = self.storage.authorized.get_current_value();
-    assert_eq(authorized, self.msg_sender().unwrap(), "caller is not authorized");
+fn use_swap_fee() {
+    let current_fee = self.storage.swap_fee.get_current_value();
+    // Use the fee in calculations
 }
 ```
 
 :::warning Privacy Consideration
-
 Reading `DelayedPublicMutable` in private sets the `include_by_timestamp` property, which may reveal timing information. Choose delays that align with common values to maximize privacy sets.
-
 :::
 
 #### `get_scheduled_value`
@@ -276,16 +301,19 @@ When working with private state variables, many operations return a `NoteMessage
 
 Private notes need to be communicated to their recipients so they know the note exists and can use it. The `NoteMessage` wrapper forces you to make an explicit choice about how this happens:
 
-- **`.deliver(MessageDelivery)`**: Delivers the note so the recipient can discover it. You must specify a `MessageDelivery` option:
   - `MessageDelivery.ONCHAIN_CONSTRAINED`: Verified in the circuit (most secure, but highest cost) - Use when the sender cannot be trusted to deliver correctly (e.g., protocol fees, multisig config updates). **Warning:** Currently [not fully constrained](https://github.com/AztecProtocol/aztec-packages/issues/14565) - the log's tag is unconstrained.
   - `MessageDelivery.ONCHAIN_UNCONSTRAINED`: Message stored on-chain but no guarantees on content - Use when sender is incentivized to deliver correctly but may not have off-chain channel to recipient
   - `MessageDelivery.OFFCHAIN`: Lowest cost, no on-chain data - Use when sender and recipient can communicate off-chain and sender is incentivized to deliver correctly
 
 #### Accessing the Note
 
-The `NoteMessage` type contains a `new_note` field that you can access if needed. Most commonly you'll call `.deliver()` on it:
+The `NoteMessage` type contains a `new_note` field that you can access if needed:
 
-#include_code constructor /docs/examples/contracts/counter_contract/src/main.nr rust
+```rust
+// Get the note and deliver it
+let note_message = self.storage.user_settings.at(owner).get_note();
+note_message.deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+```
 
 Methods that return `NoteMessage` include `initialize()`, `get_note()`, and `replace()` on `PrivateMutable`, `initialize()` on `PrivateImmutable`, and `insert()` on `PrivateSet`.
 
@@ -303,13 +331,9 @@ Below is a table comparing certain key properties of the different private state
 
 ### Owned State Variables
 
-Private state variables like `PrivateMutable`, `PrivateImmutable`, and `PrivateSet` implement the `OwnedStateVariable` trait. You must wrap them in `Owned`:
+Private state variables like `PrivateMutable`, `PrivateImmutable`, and `PrivateSet` implement the `OwnedStateVariable` trait. You must wrap them in `Owned`.
 
-#include_code storage_struct /docs/examples/contracts/counter_contract/src/main.nr rust
-
-Access the underlying state variable for a specific owner using `.at(owner)`:
-
-#include_code increment /docs/examples/contracts/counter_contract/src/main.nr rust
+Access the underlying state variable for a specific owner using `.at(owner)`
 
 ### PrivateMutable
 
@@ -326,11 +350,105 @@ To ensure that a user's private execution always uses the latest value of a `Pri
 Reading a `PrivateMutable` nullifies and recreates the note. This makes reads indistinguishable from writes and ensures the sequencer cannot learn the note's value.
 :::
 
-For PrivateMutable examples, see the test_contract which demonstrates initialization, reading, and replacement patterns for private mutable state.
+#### Declaration
+
+```rust
+#[storage]
+struct Storage<Context> {
+    user_settings: Owned<PrivateMutable<SettingsNote, Context>, Context>,
+}
+```
+
+#### `is_initialized`
+
+An unconstrained method to check whether the `PrivateMutable` has been initialized or not:
+
+```rust
+let is_initialized = self.storage.user_settings.at(owner).is_initialized();
+```
+
+#### `initialize`
+
+The `PrivateMutable` should be initialized to create the first note and value:
+
+```rust
+use aztec::messages::message_delivery::MessageDelivery;
+
+#[external("private")]
+fn initialize_settings(value: u8) {
+    let owner = self.msg_sender().unwrap();
+    let note = SettingsNote::new(value, owner);
+    self.storage.user_settings.at(owner).initialize(note).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+}
+```
+
+#### `get_note`
+
+This function allows us to get the note of a `PrivateMutable`, essentially reading the value:
+
+```rust
+#[external("private")]
+fn read_settings() {
+    let owner = self.msg_sender().unwrap();
+    self.storage.user_settings.at(owner).get_note().deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+}
+```
+
+:::info
+To ensure that a user's private execution always uses the latest value of a `PrivateMutable`, the `get_note` function will nullify the note that it is reading. This means that if two people are trying to use this function with the same note, only one will succeed.
+:::
+
+#### `replace`
+
+To update the value of a `PrivateMutable`, we can use the `replace` method:
+
+```rust
+#[external("private")]
+fn update_settings(new_value: u8) {
+    let owner = self.msg_sender().unwrap();
+    self.storage.user_settings.at(owner).replace(|_| SettingsNote::new(new_value, owner)).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+}
+```
 
 ### PrivateImmutable
 
 `PrivateImmutable` represents a unique private state variable that, as the name suggests, is immutable. Once initialized, its value cannot be altered. This is the private equivalent of `PublicImmutable`, except the value is only known to its owner.
+
+Unlike a `PrivateMutable`, the `get_note` function for a `PrivateImmutable` doesn't nullify the current note and returns the `Note` directly (not wrapped in `NoteMessage`). This means that multiple accounts can concurrently call this function to read the value.
+
+#### Declaration
+
+```rust
+#[storage]
+struct Storage<Context> {
+    signing_key: Owned<PrivateImmutable<KeyNote, Context>, Context>,
+}
+```
+
+#### `initialize`
+
+When this function is invoked, it creates a nullifier for the storage slot, ensuring that the `PrivateImmutable` cannot be initialized again:
+
+```rust
+#[external("private")]
+fn initialize_key(key_value: Field) {
+    let owner = self.msg_sender().unwrap();
+    let note = KeyNote::new(key_value, owner);
+    self.storage.signing_key.at(owner).initialize(note).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+}
+```
+
+#### `get_note`
+
+Similar to the `PrivateMutable`, we can use the `get_note` method to read the value:
+
+```rust
+#[external("private")]
+fn get_key() -> KeyNote {
+    let owner = self.msg_sender().unwrap();
+    self.storage.signing_key.at(owner).get_note()
+}
+```
 
 Unlike a `PrivateMutable`, the `get_note` function for a `PrivateImmutable` doesn't nullify the current note and returns the `Note` directly (not wrapped in `NoteMessage`). This means that multiple accounts can concurrently call this function to read the value.
 
@@ -343,17 +461,65 @@ Unlike a `PrivateMutable`, the `get_note` function for a `PrivateImmutable` does
 
 The set's current value is the collection of notes in the set that have not yet been nullified. These notes can have any type: they could be nft IDs, representing a user's nft collection, or they might be token amounts, in which case _the sum_ of all values in the set would be the user's current balance.
 
-#### Example Usage
+#### Declaration
 
-Here's how a token contract uses PrivateSet for balances:
+For example, to add private token balances to storage:
 
-#include_code transfer_private /docs/examples/contracts/bob_token_contract/src/main.nr rust
+```rust
+#[storage]
+struct Storage<Context> {
+    balances: Owned<PrivateSet<UintNote, Context>, Context>,
+}
+```
 
-And checking balances:
+#### `insert`
 
-#include_code check_balances /docs/examples/contracts/bob_token_contract/src/main.nr rust
+Allows us to modify the storage by inserting a note into the `PrivateSet`:
+
+```rust
+#[external("private")]
+fn mint_tokens(to: AztecAddress, amount: u128) {
+    let note = UintNote::new(amount, to);
+    self.storage.balances.at(to).insert(note).deliver(MessageDelivery.UNCONSTRAINED_ONCHAIN);
+}
+```
 
 Note: The `Owned` wrapper requires calling `.at(owner)` to access the underlying `PrivateSet` for a specific owner. This binds the owner to the state variable instance.
+
+#### `get_notes`
+
+Retrieves notes the account has access to. You can optionally provide filtering options. Returns `RetrievedNote` instances:
+
+```rust
+// Get all notes (with default options)
+let options = NoteGetterOptions::new();
+let retrieved_notes = self.storage.balances.at(owner).get_notes(options);
+
+// Or with custom options (e.g., limit the number of notes)
+let options = NoteGetterOptions::new().set_limit(5);
+let retrieved_notes = self.storage.balances.at(owner).get_notes(options);
+```
+
+#### `pop_notes`
+
+This function pops (gets, removes and returns) the notes the account has access to. Unlike `get_notes`, this immediately nullifies the notes and returns them directly (not wrapped in `RetrievedNote`):
+
+```rust
+// Pop notes with a limit
+let options = NoteGetterOptions::new().set_limit(10);
+let notes = self.storage.balances.at(owner).pop_notes(options);
+```
+
+#### `remove`
+
+Will remove a note from the `PrivateSet` if it previously has been read from storage. Takes a `RetrievedNote` as returned by `get_notes`:
+
+```rust
+let options = NoteGetterOptions::new();
+let retrieved_notes = self.storage.balances.at(owner).get_notes(options);
+// ... select a note to remove ...
+self.storage.balances.at(owner).remove(retrieved_notes.get(0));
+```
 
 ### SinglePrivateMutable and SinglePrivateImmutable
 
@@ -386,9 +552,7 @@ self.storage.admin.initialize(note, owner_address).deliver(MessageDelivery.ONCHA
 ```
 
 :::warning
-
 SinglePrivateMutable uses a nullify-and-recreate pattern when reading. Unless the caller is incentivized to deliver the note message correctly, you should use `MessageDelivery.ONCHAIN_CONSTRAINED` to prevent malicious actors from bricking the contract by failing to deliver the note.
-
 :::
 
 ## Containers
@@ -399,36 +563,68 @@ A `Map` is a key-value container that maps keys to state variables - just like S
 
 For example, a `Map<AztecAddress, PublicMutable<u128>>` can be accessed with an address to obtain the `PublicMutable` that corresponds to it. This is exactly equivalent to a Solidity `mapping (address => uint)`.
 
-#### Declaration and Usage
+#### Declaration
 
-Here's an example from the BobToken contract:
+```rust
+#[storage]
+struct Storage<Context> {
+    // Map of addresses to public balances
+    public_balances: Map<AztecAddress, PublicMutable<u128, Context>, Context>,
 
-#include_code storage /docs/examples/contracts/bob_token_contract/src/main.nr rust
+    // Map of addresses to authorized users
+    authorized_users: Map<AztecAddress, PublicMutable<bool, Context>, Context>,
+}
+```
+
+#### Usage
 
 Use the `.at()` method to access values by key:
 
-#include_code transfer_public /docs/examples/contracts/bob_token_contract/src/main.nr rust
-
-This is equivalent to Solidity's `public_balances[account]` pattern.
-
-Maps can contain other maps for multi-dimensional lookups:
-
 ```rust
-// Map game_id -> player_address -> score
-games: Map<Field, Map<AztecAddress, PublicMutable<u32, Context>, Context>, Context>,
-
-// Access: self.storage.games.at(game_id).at(player).read()
+#[external("public")]
+fn increase_balance(account: AztecAddress, amount: u128) {
+    let current = self.storage.public_balances.at(account).read();
+    self.storage.public_balances.at(account).write(current + amount);
+}
 ```
 
 :::note
-
 Maps can only be used with public state variables (`PublicMutable`, `PublicImmutable`, `DelayedPublicMutable`) or other `Map`s. For private state, use the `Owned` wrapper described above.
-
 :::
 
 ### Owned
 
 The `Owned` wrapper is used with private state variables (`PrivateMutable`, `PrivateImmutable`, and `PrivateSet`) to associate them with a specific owner. This is necessary because private state variables need to know which address owns the notes they manage.
+
+#### Declaration
+
+```rust
+#[storage]
+struct Storage<Context> {
+    // Single owner's private balance
+    balances: Owned<PrivateSet<UintNote, Context>, Context>,
+
+    // Single owner's private settings
+    user_settings: Owned<PrivateMutable<SettingsNote, Context>, Context>,
+}
+```
+
+#### Usage
+
+Use the `.at(owner)` method to access the underlying state variable for a specific owner:
+
+```rust
+#[external("private")]
+fn transfer(from: AztecAddress, to: AztecAddress, amount: u128) {
+    // Access the balance for the 'from' address
+    let options = NoteGetterOptions::new();
+    let notes = self.storage.balances.at(from).pop_notes(options);
+
+    // Access the balance for the 'to' address
+    let new_note = UintNote::new(amount, to);
+    self.storage.balances.at(to).insert(new_note).deliver(MessageDelivery.UNCONSTRAINED_ONCHAIN);
+}
+```
 
 The `Owned` wrapper is essential for private state variables because it binds the owner's address to the state variable instance, enabling proper note encryption, nullifier computation, and access control.
 
