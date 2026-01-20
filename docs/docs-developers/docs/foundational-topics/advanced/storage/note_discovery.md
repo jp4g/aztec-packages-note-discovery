@@ -61,7 +61,7 @@ There are three broad families of solutions to this problem:
 
 **b) Tagging with known sender** (current implementation) - You know who will send you messages and search for those specifically. This is very fast and allows you to remove senders who spam you. However, we don't currently have a mechanism for constraining this (i.e., guaranteeing that the recipient will find the message).
 
-**c) Tagging with handshaking** - An intermediate solution where you can be notified of new senders. A handshake occurs on-chain that lets the recipient discover a new sender, and from that point on there's regular tagging. This design either:
+**c) Tagging with handshaking** - An intermediate solution where you can be notified of new senders. A handshake occurs onchain that lets the recipient discover a new sender, and from that point on there's regular tagging. This design either:
 - Is fast but leaks privacy (e.g., a public event with "new handshake for Alice!")
 - Is slow but doesn't leak (you brute force scan all logs from a handshake contract, testing if any handshakes are for you)
 
@@ -69,7 +69,7 @@ The handshaking design space is large - for example, you could set up infrastruc
 
 **Handshaking is not currently implemented in Aztec.nr.** For now, if you need to receive notes from unknown senders, potential workarounds include:
 - Having senders register themselves in a contract first, allowing recipients to search for note tags from all registered senders
-- Using off-chain communication to share sender addresses with recipients
+- Using offchain communication to share sender addresses with recipients
 - Implementing a custom discovery mechanism in your contract
 
 See the [Note Delivery](../../../aztec-nr/framework-description/note_delivery.md) documentation for more details on how the sender is used when delivering notes.

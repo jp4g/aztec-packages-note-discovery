@@ -5,7 +5,7 @@ description: Learn how to deliver notes to recipients in Aztec smart contracts u
 sidebar_position: 4
 ---
 
-When you create a note in an Aztec smart contract, you must deliver it to the recipient so they can use it. This guide explains how note delivery works and how to choose the right delivery mode for your use case.
+When you create a note in an Aztec smart contract, you must deliver it to the recipient so they can use it. This page explains how note delivery works and how to choose the right delivery mode for your use case.
 
 ## Overview
 
@@ -13,11 +13,11 @@ In Aztec, creating a note involves two steps:
 1. **Creating the note** - Adding the note hash to the note hash tree
 2. **Delivering the note** - Sending the note contents to the recipient so they can decrypt and use it
 
-Without delivery, the recipient won't know the note exists or be able to access its contents, even though the note hash is on-chain.
+Without delivery, the recipient won't know the note exists or be able to access its contents, even though the note hash is onchain.
 
 ## The `.deliver()` Method
 
-When you create a note using state variables like `PrivateSet`, `BalanceSet`, or `SinglePrivateMutable`, the creation methods return a `NoteMessage` or `MaybeNoteMessage` object. You must call `.deliver()` on this object to send the note to the recipient.
+When you create a note using state variables like `PrivateMutable`, `PrivateSet`, `BalanceSet`, or `SinglePrivateMutable`, the creation methods return a `NoteMessage` or `MaybeNoteMessage` object. You must call `.deliver()` on this object to send the note to the recipient.
 
 ```rust
 #[aztec]
@@ -39,12 +39,12 @@ Aztec provides three delivery modes that offer different tradeoffs between cost,
 
 ### `MessageDelivery.OFFCHAIN`
 
-**Fully off-chain delivery with no guarantees.**
+**Fully offchain delivery with no guarantees.**
 
 - **Use when:** The sender is incentivized to deliver correctly (e.g., sending to yourself, payment for goods/services where recipient must receive the note to complete the transaction)
 - **Costs:** Zero transaction fees, zero proving time overhead
-- **Guarantees:** None - sender can fail to deliver or deliver incorrect content
-- **Privacy:** Maximum - no on-chain data emitted
+- **Guarantees:** None. The sender can fail to deliver or deliver incorrect content
+- **Privacy:** Maximum. No onchain data is emitted
 
 **Example use cases:**
 - Change notes when transferring tokens (you're sending to yourself)
@@ -60,17 +60,17 @@ self.storage.balances.at(sender).add(change_amount)
 
 ### `MessageDelivery.ONCHAIN_UNCONSTRAINED`
 
-**On-chain delivery with no content guarantees.**
+**Onchain delivery with no content guarantees.**
 
-- **Use when:** You need on-chain backup/discoverability but the sender is still incentivized to deliver correctly
+- **Use when:** You need onchain backup/discoverability but the sender is still incentivized to deliver correctly
 - **Costs:** DA gas fees for the encrypted log, zero proving time overhead
-- **Guarantees:** Message stored on-chain and retrievable, but sender can deliver incorrect content or wrong tag
+- **Guarantees:** Message stored onchain and retrievable, but sender can deliver incorrect content or wrong tag
 - **Privacy:** High - encrypted log reveals minimal information
 
 **Example use cases:**
 - Escrow deposits where recipient won't proceed without receiving the note
-- Scenarios where sender cannot contact recipient off-chain
-- When you want automatic backup without off-chain responsibility
+- Scenarios where sender cannot contact recipient offchain
+- When you want automatic backup without offchain responsibility
 
 ```rust
 // Minting to an admin who controls the contract
@@ -80,14 +80,14 @@ self.storage.balances.at(admin).add(amount)
 
 ### `MessageDelivery.ONCHAIN_CONSTRAINED`
 
-**On-chain delivery with guaranteed correct content.**
+**Onchain delivery with guaranteed correct content.**
 
-  **WARNING**: This mode is [currently NOT fully constrained](https://github.com/AztecProtocol/aztec-packages/issues/14565). The log's tag is unconstrained, meaning a malicious sender could prevent the recipient from finding the message.
+**WARNING**: This mode is [currently NOT fully constrained](https://github.com/AztecProtocol/aztec-packages/issues/14565). The log's tag is unconstrained, meaning a malicious sender could prevent the recipient from finding the message.
 
 - **Use when:** The sender cannot be trusted to deliver correctly (e.g., paying fees, creating notes for others, multisig configuration changes)
 - **Costs:** DA gas fees for encrypted log + nullifiers, proving time overhead for encryption and tagging
 - **Guarantees:** Recipient receives correctly encrypted content (once tag constraining is implemented, recipient will be able to find it)
-- **Privacy:** Moderate - encrypted logs and nullifiers create on-chain fingerprints
+- **Privacy:** Moderate - encrypted logs and nullifiers create onchain fingerprints
 
 **Example use cases:**
 - Protocol fee payments (sender has no incentive to deliver correctly)
@@ -105,38 +105,40 @@ self.storage.balances.at(recipient).add(amount)
 
 Ask yourself: **"Is the sender incentivized to deliver this note correctly?"**
 
-- **Yes, and they can contact the recipient off-chain** ’ Use `OFFCHAIN`
-- **Yes, but they cannot or prefer not to contact them off-chain** ’ Use `ONCHAIN_UNCONSTRAINED`
-- **No, the sender might not deliver correctly** ’ Use `ONCHAIN_CONSTRAINED`
+- **Yes, and they can contact the recipient offchain** Use `OFFCHAIN`
+- **Yes, but they cannot or prefer not to contact them offchain** Use `ONCHAIN_UNCONSTRAINED`
+- **No, the sender might not deliver correctly** Use `ONCHAIN_CONSTRAINED`
 
 ## Note Discovery and the Sender
 
-The "sender" in note delivery is **not** the transaction sender - it's the **sender for tags**, which is typically the account contract that initiated the transaction.
+When a note is delivered, recipients need to discover it among all the encrypted logs on the network. Aztec uses a **tagging system** that requires computing a shared secret between the sender and recipient.
 
-Account contracts call `set_sender_for_tags(account_address)` before making calls to other contracts. This address is used to compute the tag that allows recipients to discover notes.
+### Who is the "Sender"?
+
+The "sender" for note discovery is **not the contract calling `.deliver()`**. Instead, it's the **account contract** that initiated the transaction.
+
+When your wallet submits a transaction, the account contract calls `set_sender_for_tags(account_address)` to identify itself as the sender. This sender address is then used along with the recipient address to compute a shared secret (via Diffie-Hellman key exchange), which generates the tag that allows recipients to efficiently find their notes.
+
+**Example:** If Alice uses her account contract to call a token contract that mints tokens to Bob, the "sender for tags" is Alice's account contract address, not the token contract address.
 
 ### Discovering Notes from Unknown Senders
 
-**You cannot receive notes from an unknown sender** without additional mechanisms. The current tagging system requires both sender and recipient addresses to compute the shared secret used for tag generation.
+**You cannot receive notes from an unknown sender** without additional mechanisms. The tagging system requires you to know the sender's address in advance to compute the shared secret needed to find the note.
 
-There are three broad families of solutions to this problem:
+There are three approaches to solve this:
 
-**a) Brute force search** - Scan every log and test if it decrypts. This has obvious performance issues as the network grows.
+**a) Brute force search** - Download every log and attempt to decrypt it. This becomes prohibitively expensive as the network grows.
 
-**b) Tagging with known sender** (current implementation) - You know who will send you messages and search for those specifically. Very fast, but requires knowing the sender in advance. If a sender begins spamming you, you can remove them from your search.
+**b) Known sender tagging** (current implementation) - Only receive notes from senders whose addresses you've registered in your PXE. This is very fast and allows you to block spammers by removing them from your sender list. However, you must know who might send you notes in advance.
 
-**c) Tagging with handshaking** - An intermediate solution where you can be notified of new senders. A handshake occurs on-chain that lets the recipient discover a new sender, and from that point on regular tagging works. This either:
-- Is fast but leaks privacy (e.g., a public event saying "new handshake for Alice!")
-- Is slow but private (you brute force scan handshake logs to find ones meant for you)
+**c) Handshaking protocols** (not yet implemented) - A two-phase approach where senders first perform a "handshake" that notifies you of their existence, then use regular tagging afterward. This trades off either privacy (public handshake events) or performance (scanning all handshake logs).
 
-**Handshaking is a possibility in the design space but hasn't been implemented in Aztec.nr yet.** The design space for handshaking solutions is large, with various tradeoffs involving infrastructure requirements, privacy, and performance.
+**Workarounds for receiving notes from unknown senders:**
+- Require senders to register in a contract first, then search for notes from all registered senders
+- Share sender addresses through offchain communication
+- Implement a custom discovery mechanism in your contract
 
-For now, if you need to receive notes from unknown senders, you must implement a custom discovery mechanism, such as:
-- Having senders register themselves in a contract first
-- Using off-chain communication to share sender addresses
-- Setting up an intermediary service to handle discovery
-
-See the [Note Discovery](../foundational-topics/advanced/storage/note_discovery.md) documentation for more details on the tagging mechanism and its limitations.
+See the [Note Discovery](../../foundational-topics/advanced/storage/note_discovery.md) documentation for technical details on the tagging mechanism.
 
 ## Delivering to Someone Other Than the Note Owner
 
@@ -207,8 +209,3 @@ fn transfer_with_change(amount: u128, from: AztecAddress, to: AztecAddress) {
         .deliver(MessageDelivery.ONCHAIN_CONSTRAINED);
 }
 ```
-
-## Related Documentation
-
-- [Note Discovery](../foundational-topics/advanced/storage/note_discovery.md) - How recipients find notes using tags
-- [State Management](../foundational-topics/state_management.md) - Overview of state variables that create notes
