@@ -120,7 +120,7 @@ It **cannot be read or written to privately**, but it is possible to call privat
 
 Store mutable public state using `PublicMutable<T>` for values that need to be updated throughout the contract's lifecycle.
 
-For example, storaing the address of the collateral asset in a lending contract:
+For example, storing the address of the collateral asset in a lending contract:
 
 #include_code public_mutable /noir-projects/noir-contracts/contracts/app/lending_contract/src/main.nr rust
 
@@ -244,8 +244,8 @@ When working with private state variables, many operations return a `NoteMessage
 Private notes need to be communicated to their recipients so they know the note exists and can use it. The `NoteMessage` wrapper forces you to make an explicit choice about how this happens:
 
   - `MessageDelivery.ONCHAIN_CONSTRAINED`: Verified in the circuit (most secure, but highest cost) - Use when the sender cannot be trusted to deliver correctly (e.g., protocol fees, multisig config updates). **Warning:** Currently [not fully constrained](https://github.com/AztecProtocol/aztec-packages/issues/14565) - the log's tag is unconstrained.
-  - `MessageDelivery.ONCHAIN_UNCONSTRAINED`: Message stored on-chain but no guarantees on content - Use when sender is incentivized to deliver correctly but may not have off-chain channel to recipient
-  - `MessageDelivery.OFFCHAIN`: Lowest cost, no on-chain data - Use when sender and recipient can communicate off-chain and sender is incentivized to deliver correctly
+  - `MessageDelivery.ONCHAIN_UNCONSTRAINED`: Message stored onchain but no guarantees on content - Use when sender is incentivized to deliver correctly but may not have offchain channel to recipient
+  - `MessageDelivery.OFFCHAIN`: Lowest cost, no onchain data - Use when sender and recipient can communicate  and sender is incentivized to deliver correctly
 
 #### Accessing the Note
 
