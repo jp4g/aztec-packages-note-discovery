@@ -39,13 +39,13 @@ pub contract Auth {
     }
     // docs:end:schedule_value_change
 
-    // docs:start:public_getter
+    // docs:start:get_current_value
     #[external("public")]
     #[view]
     fn get_authorized() -> AztecAddress {
         self.storage.authorized.get_current_value()
     }
-    // docs:end:public_getter
+    // docs:end:get_current_value
 
     // docs:start:get_scheduled_value
     #[external("public")]

@@ -31,7 +31,9 @@ pub contract Lending {
     // Storage structure, containing all storage, and specifying what slots they use.
     #[storage]
     struct Storage<Context> {
+        // docs:start:public_mutable
         collateral_asset: PublicMutable<AztecAddress, Context>,
+        // docs:end:public_mutable
         stable_coin: PublicMutable<AztecAddress, Context>,
         assets: Map<Field, PublicMutable<Asset, Context>, Context>,
         collateral: Map<AztecAddress, PublicMutable<u128, Context>, Context>,
@@ -71,8 +73,9 @@ pub contract Lending {
                 oracle,
             },
         );
-
+        // docs:start:public_mutable_write
         self.storage.collateral_asset.write(collateral_asset);
+        // docs:end:public_mutable_write
         self.storage.stable_coin.write(stable_coin);
     }
     // docs:end:custom_struct_read_write
@@ -297,9 +300,11 @@ pub contract Lending {
         Position { collateral, static_debt, debt }
     }
 
+    // docs:start:public_mutable_read
     #[external("public")]
     #[view]
     fn get_assets() -> pub [AztecAddress; 2] {
         [self.storage.collateral_asset.read(), self.storage.stable_coin.read()]
     }
+    // docs:end:public_mutable_read
 }

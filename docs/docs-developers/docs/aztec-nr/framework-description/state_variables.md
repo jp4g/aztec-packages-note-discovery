@@ -52,9 +52,9 @@ contract MyContract {
     use aztec::macros::storage;
 
     #[storage]
-    struct Storage<C> {
+    struct Storage<Context> {
         // state variables go here e.g, the admin of the contract
-        admin: PublicMutable<AztecAddress, C>,
+        admin: PublicMutable<AztecAddress, Context>,
     }
 }
 ```
@@ -71,8 +71,8 @@ Consider, for example, a `PublicMutable` state variable, which is a value that i
 
 ```rust
 #[storage]
-struct Storage<C> {
-    my_public_variable: PublicMutable<u128, C>,
+struct Storage<Context> {
+    my_public_variable: PublicMutable<u128, Context>,
 }
 
 #[external("public")]
@@ -120,45 +120,21 @@ It **cannot be read or written to privately**, but it is possible to call privat
 
 Store mutable public state using `PublicMutable<T>` for values that need to be updated throughout the contract's lifecycle.
 
-```rust
-#[storage]
-struct Storage<Context> {
-    admin: PublicMutable<AztecAddress, Context>,
-    total_supply: PublicMutable<u128, Context>,
-}
-```
+For example, storaing the address of the collateral asset in a lending contract:
 
-To add a group of `authorized_users` that are able to perform actions in our contract in public storage:
-
-```rust
-#[storage]
-struct Storage<Context> {
-    authorized_users: Map<AztecAddress, PublicMutable<bool, Context>, Context>,
-}
-```
+#include_code public_mutable /noir-projects/noir-contracts/contracts/app/lending_contract/src/main.nr rust
 
 #### `read`
 
 `PublicMutable` variables have a `read` method to read the value at the location in storage:
 
-```rust
-#[external("public")]
-fn check_admin() {
-    let admin = self.storage.admin.read();
-    assert(admin == self.msg_sender().unwrap(), "caller is not admin");
-}
-```
+#include_code public_mutable_read /noir-projects/noir-contracts/contracts/app/lending_contract/src/main.nr rust
 
 #### `write`
 
 The `write` method on `PublicMutable` variables takes the value to write as an input and saves this in storage:
 
-```rust
-#[external("public")]
-fn set_admin(new_admin: AztecAddress) {
-    self.storage.admin.write(new_admin);
-}
-```
+#include_code public_mutable_write /noir-projects/noir-contracts/contracts/app/lending_contract/src/main.nr rust
 
 ### PublicImmutable
 
@@ -168,23 +144,15 @@ Due to the value being immutable, it is also possible to read it during private 
 
 #### Declaration
 
-```rust
-#[storage]
-struct Storage<Context> {
-    contract_version: PublicImmutable<u32, Context>,
-}
-```
+For example, in the `Storage` struct in a simple token contract, the name, symbol and decimals are `PublicImmutable` variables:
+
+#include_code public_immutable /noir-projects/noir-contracts/contracts/app/simple_token_contract/src/main.nr rust
 
 #### `initialize`
 
 This function sets the immutable value. It can only be called once.
 
-```rust
-#[external("public")]
-fn initialize_version(version: u32) {
-    self.storage.contract_version.initialize(version);
-}
-```
+#include_code public_immutable_initialize /noir-projects/noir-contracts/contracts/app/simple_token_contract/src/main.nr rust
 
 :::warning
 A `PublicImmutable`'s storage **must** only be set once via `initialize`. Attempting to override this by manually accessing the underlying storage slots breaks all properties of the data structure, rendering it useless.
@@ -194,12 +162,7 @@ A `PublicImmutable`'s storage **must** only be set once via `initialize`. Attemp
 
 Returns the stored immutable value. This function is available in public, private and utility contexts.
 
-```rust
-#[external("public")]
-fn get_version() -> u32 {
-    self.storage.contract_version.read()
-}
-```
+#include_code public_immutable_read /noir-projects/noir-contracts/contracts/app/simple_token_contract/src/main.nr rust
 
 ### DelayedPublicMutable
 
@@ -213,38 +176,19 @@ The existence of minimum delays means that a private function that reads a publi
 
 Unlike other state variables, `DelayedPublicMutable` receives not only a type parameter for the underlying datatype, but also a `DELAY` type parameter with the value change delay as a number of seconds.
 
-```rust
-global MY_DELAY: u32 = 3600; // 1 hour delay
-
-#[storage]
-struct Storage<Context> {
-    swap_fee: DelayedPublicMutable<u128, MY_DELAY, Context>,
-}
-```
+#include_code delayed_public_mutable_storage /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 #### `schedule_value_change`
 
 This is the means by which a `DelayedPublicMutable` variable mutates its contents. It schedules a value change for the variable at a future timestamp after the `DELAY` has elapsed.
 
-```rust
-#[external("public")]
-fn set_swap_fee(new_fee: u128) {
-    assert(self.storage.admin.read() == self.msg_sender().unwrap(), "caller is not admin");
-    self.storage.swap_fee.schedule_value_change(new_fee);
-}
-```
+#include_code schedule_value_change /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 #### `get_current_value`
 
 Returns the current value in a public, private or utility execution context.
 
-```rust
-#[external("private")]
-fn use_swap_fee() {
-    let current_fee = self.storage.swap_fee.get_current_value();
-    // Use the fee in calculations
-}
-```
+#include_code get_current_value /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 :::warning Privacy Consideration
 Reading `DelayedPublicMutable` in private sets the `include_by_timestamp` property, which may reveal timing information. Choose delays that align with common values to maximize privacy sets.
@@ -254,9 +198,7 @@ Reading `DelayedPublicMutable` in private sets the `include_by_timestamp` proper
 
 Returns the scheduled value and when it takes effect:
 
-```rust
-let (scheduled_value, effective_timestamp) = self.storage.authorized.get_scheduled_value();
-```
+#include_code get_scheduled_value /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
 
 ## Private State Variables
 
@@ -309,11 +251,7 @@ Private notes need to be communicated to their recipients so they know the note 
 
 The `NoteMessage` type contains a `new_note` field that you can access if needed:
 
-```rust
-// Get the note and deliver it
-let note_message = self.storage.user_settings.at(owner).get_note();
-note_message.deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
-```
+#include_code note_delivery /noir-projects/noir-contracts/contracts/app/private_token_contract/src/main.nr rust
 
 Methods that return `NoteMessage` include `initialize()`, `get_note()`, and `replace()` on `PrivateMutable`, `initialize()` on `PrivateImmutable`, and `insert()` on `PrivateSet`.
 
@@ -352,39 +290,23 @@ Reading a `PrivateMutable` nullifies and recreates the note. This makes reads in
 
 #### Declaration
 
-```rust
-#[storage]
-struct Storage<Context> {
-    user_settings: Owned<PrivateMutable<SettingsNote, Context>, Context>,
-}
-```
+#include_code owned_private_mutable /noir-projects/noir-contracts/contracts/app/app_subscription_contract/src/main.nr rust
 
 #### `is_initialized`
 
 An unconstrained method to check whether the `PrivateMutable` has been initialized or not:
 
-```rust
-let is_initialized = self.storage.user_settings.at(owner).is_initialized();
-```
+#include_code owned_private_mutable_is_initialized /noir-projects/noir-contracts/contracts/app/app_subscription_contract/src/main.nr rust
 
-#### `initialize`
+#### `initialize` and `initialize_or_replace`
 
-The `PrivateMutable` should be initialized to create the first note and value:
+The `PrivateMutable` should be initialized to create the first note and value. This can be does eith either `initialize` or `initialize_or_replace`:
 
-```rust
-use aztec::messages::message_delivery::MessageDelivery;
-
-#[external("private")]
-fn initialize_settings(value: u8) {
-    let owner = self.msg_sender().unwrap();
-    let note = SettingsNote::new(value, owner);
-    self.storage.user_settings.at(owner).initialize(note).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
-}
-```
+#include_code owned_private_mutable_initialize /noir-projects/noir-contracts/contracts/app/app_subscription_contract/src/main.nr rust
 
 #### `get_note`
 
-This function allows us to get the note of a `PrivateMutable`, essentially reading the value:
+This function allows us to get the note of a `PrivateMutable`, essentially reading the value. Note that because :
 
 ```rust
 #[external("private")]
@@ -402,13 +324,7 @@ To ensure that a user's private execution always uses the latest value of a `Pri
 
 To update the value of a `PrivateMutable`, we can use the `replace` method:
 
-```rust
-#[external("private")]
-fn update_settings(new_value: u8) {
-    let owner = self.msg_sender().unwrap();
-    self.storage.user_settings.at(owner).replace(|_| SettingsNote::new(new_value, owner)).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
-}
-```
+#include_code owned_single_private_mutable_replace /noir-projects/noir-contracts/contracts/app/private_token_contract/src/main.nr rust
 
 ### PrivateImmutable
 
@@ -418,37 +334,9 @@ Unlike a `PrivateMutable`, the `get_note` function for a `PrivateImmutable` does
 
 #### Declaration
 
-```rust
-#[storage]
-struct Storage<Context> {
-    signing_key: Owned<PrivateImmutable<KeyNote, Context>, Context>,
-}
-```
+#include_code private_immutable /noir-projects/noir-contracts/contracts/test/test_contract/src/main.nr rust
 
-#### `initialize`
-
-When this function is invoked, it creates a nullifier for the storage slot, ensuring that the `PrivateImmutable` cannot be initialized again:
-
-```rust
-#[external("private")]
-fn initialize_key(key_value: Field) {
-    let owner = self.msg_sender().unwrap();
-    let note = KeyNote::new(key_value, owner);
-    self.storage.signing_key.at(owner).initialize(note).deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
-}
-```
-
-#### `get_note`
-
-Similar to the `PrivateMutable`, we can use the `get_note` method to read the value:
-
-```rust
-#[external("private")]
-fn get_key() -> KeyNote {
-    let owner = self.msg_sender().unwrap();
-    self.storage.signing_key.at(owner).get_note()
-}
-```
+`PrivateImmutable` variables also have the `initialize` and `get_note` functions on them but no `initialize_or_replace` since they cannot be modified.
 
 Unlike a `PrivateMutable`, the `get_note` function for a `PrivateImmutable` doesn't nullify the current note and returns the `Note` directly (not wrapped in `NoteMessage`). This means that multiple accounts can concurrently call this function to read the value.
 
@@ -465,24 +353,13 @@ The set's current value is the collection of notes in the set that have not yet 
 
 For example, to add private token balances to storage:
 
-```rust
-#[storage]
-struct Storage<Context> {
-    balances: Owned<PrivateSet<UintNote, Context>, Context>,
-}
-```
+#include_code private_set_insert /noir-projects/noir-contracts/contracts/test/pending_note_hashes_contract/src/main.nr rust
 
 #### `insert`
 
 Allows us to modify the storage by inserting a note into the `PrivateSet`:
 
-```rust
-#[external("private")]
-fn mint_tokens(to: AztecAddress, amount: u128) {
-    let note = UintNote::new(amount, to);
-    self.storage.balances.at(to).insert(note).deliver(MessageDelivery.UNCONSTRAINED_ONCHAIN);
-}
-```
+#include_code private_set_insert /noir-projects/noir-contracts/contracts/test/pending_note_hashes_contract/src/main.nr rust
 
 Note: The `Owned` wrapper requires calling `.at(owner)` to access the underlying `PrivateSet` for a specific owner. This binds the owner to the state variable instance.
 
@@ -490,25 +367,13 @@ Note: The `Owned` wrapper requires calling `.at(owner)` to access the underlying
 
 Retrieves notes the account has access to. You can optionally provide filtering options. Returns `RetrievedNote` instances:
 
-```rust
-// Get all notes (with default options)
-let options = NoteGetterOptions::new();
-let retrieved_notes = self.storage.balances.at(owner).get_notes(options);
-
-// Or with custom options (e.g., limit the number of notes)
-let options = NoteGetterOptions::new().set_limit(5);
-let retrieved_notes = self.storage.balances.at(owner).get_notes(options);
-```
+#include_code private_set_get_notes /noir-projects/noir-contracts/contracts/test/pending_note_hashes_contract/src/main.nr rust
 
 #### `pop_notes`
 
 This function pops (gets, removes and returns) the notes the account has access to. Unlike `get_notes`, this immediately nullifies the notes and returns them directly (not wrapped in `RetrievedNote`):
 
-```rust
-// Pop notes with a limit
-let options = NoteGetterOptions::new().set_limit(10);
-let notes = self.storage.balances.at(owner).pop_notes(options);
-```
+#include_code private_set_pop_notes /noir-projects/noir-contracts/contracts/test/pending_note_hashes_contract/src/main.nr rust
 
 #### `remove`
 
@@ -520,6 +385,8 @@ let retrieved_notes = self.storage.balances.at(owner).get_notes(options);
 // ... select a note to remove ...
 self.storage.balances.at(owner).remove(retrieved_notes.get(0));
 ```
+
+Note that if you obtained the note via get_notes it's much better to use pop_notes, as pop_notes results in significantly fewer constraints, due to avoiding an extra hash and read request check.
 
 ### SinglePrivateMutable and SinglePrivateImmutable
 
