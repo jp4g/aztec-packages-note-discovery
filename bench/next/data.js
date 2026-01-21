@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768964307154,
+  "lastUpdate": 1768973099740,
   "repoUrl": "https://github.com/AztecProtocol/aztec-packages",
   "entries": {
     "Aztec Benchmarks": [
@@ -490801,6 +490801,83 @@ window.BENCHMARK_DATA = {
           {
             "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p95",
             "value": 107.49999999999967,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Aztec Bot",
+            "username": "AztecBot",
+            "email": "49558828+AztecBot@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "45204cdea26c77cd2a790e14a5b7aa05ca361ab9",
+          "message": "feat: merge-train/barretenberg (#19753)\n\nBEGIN_COMMIT_OVERRIDE\nchore: native batch_mul and ck clean up (#19743)\nfix: preserve newlines in bb CLI help text formatting (#19638)\nchore: add audit scope for tag and boomerang tooling (#19437)\nEND_COMMIT_OVERRIDE",
+          "timestamp": "2026-01-21T01:06:51Z",
+          "url": "https://github.com/AztecProtocol/aztec-packages/commit/45204cdea26c77cd2a790e14a5b7aa05ca361ab9"
+        },
+        "date": 1768973012114,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/avg_inclusion",
+            "value": 47.96666666666667,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/median_inclusion",
+            "value": 49,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/high_value_0.1tps/p99_inclusion",
+            "value": 83,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p50",
+            "value": 296.3576158940397,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/tx/p95",
+            "value": 479.63576158940396,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 7.499999999999999,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 18.499999999999996,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 43.771186440677965,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 172.77777777777766,
             "unit": "ms"
           }
         ]
