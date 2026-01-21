@@ -20,7 +20,7 @@ function lint {
 export -f lint
 
 parallel ::: \
-  'yarn prepare:check' \
+  '[ -z "$XDG_CACHE_HOME" ] && unset XDG_CACHE_HOME; yarn prepare:check' \
   "$staged_files_cmd | grep -E '\.(json|js|mjs|cjs|ts)$' | parallel -N10 ./node_modules/.bin/prettier --log-level warn --check"
   # TODO(ci3) find a way to ensure the yarn-project state is ready for linting
   # "lint"
