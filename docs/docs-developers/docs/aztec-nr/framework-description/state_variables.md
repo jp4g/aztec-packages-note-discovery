@@ -388,7 +388,7 @@ This function allows us to get the note of a `PrivateMutable`, essentially readi
 #[external("private")]
 fn read_settings() {
     let owner = self.msg_sender().unwrap();
-    self.storage.user_settings.at(owner).get_note().deliver(MessageDelivery.CONSTRAINED_ONCHAIN);
+    self.storage.user_settings.at(owner).get_note().deliver(MessageDelivery.ONCHAIN_CONSTRAINED);
 }
 ```
 
