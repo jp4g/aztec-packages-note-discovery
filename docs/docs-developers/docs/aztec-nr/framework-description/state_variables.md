@@ -429,7 +429,7 @@ The set's current value is the collection of notes in the set that have not yet 
 
 For example, to add private token balances to storage:
 
-#include_code private_set_insert /noir-projects/noir-contracts/contracts/test/pending_note_hashes_contract/src/main.nr rust
+#include_code private_set /noir-projects/noir-contracts/contracts/test/pending_note_hashes_contract/src/main.nr rust
 
 #### `insert`
 
