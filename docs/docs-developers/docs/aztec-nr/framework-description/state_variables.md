@@ -376,7 +376,7 @@ An unconstrained method to check whether the `PrivateMutable` has been initializ
 
 #### `initialize` and `initialize_or_replace`
 
-The `PrivateMutable` should be initialized to create the first note and value. This can be does eith either `initialize` or `initialize_or_replace`:
+The `PrivateMutable` should be initialized to create the first note and value. This can be done with either `initialize` or `initialize_or_replace`:
 
 #include_code owned_private_mutable_initialize /noir-projects/noir-contracts/contracts/app/app_subscription_contract/src/main.nr rust
 
