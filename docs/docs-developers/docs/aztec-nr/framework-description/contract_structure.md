@@ -74,7 +74,7 @@ contract MyContract {
 
 In Aztec this process is a bit more involved, as not only are there both private and public variables (where now these keywords refer to the privacy of the variable rather than their accessibility), there are multiple _kinds_ of state variables.
 
-We define state using a [`struct`](https://noir-lang.org/docs/noir/concepts/data_types/structs) that will hold the entire contract state. We call this struct _the storage struct_, and each variable inside this struct is called [_a state variable_.](./state-variables)
+We define state using a [`struct`](https://noir-lang.org/docs/noir/concepts/data_types/structs) that will hold the entire contract state. We call this struct _the storage struct_, and each variable inside this struct is called [_a state variable_.](./state_variables)
 
 ```rust
 use aztec::macros::aztec;
