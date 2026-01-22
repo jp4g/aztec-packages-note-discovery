@@ -358,12 +358,6 @@ Access the underlying state variable for a specific owner using `.at(owner)`
 - Reading the current value results in the state variable being updated, increasing tx costs and requiring delivery of a note message.
 - There is no `write` function - the current value is instead `replace`d.
 
-:::info
-To ensure that a user's private execution always uses the latest value of a `PrivateMutable`, the `get_note` function will nullify the note that it is reading. This means that if two people are trying to use this function with the same note, only one will succeed.
-
-Reading a `PrivateMutable` nullifies and recreates the note. This makes reads indistinguishable from writes and ensures the sequencer cannot learn the note's value.
-:::
-
 #### Declaration
 
 #include_code owned_private_mutable /noir-projects/noir-contracts/contracts/app/app_subscription_contract/src/main.nr rust
@@ -394,6 +388,8 @@ fn read_settings() {
 
 :::info
 To ensure that a user's private execution always uses the latest value of a `PrivateMutable`, the `get_note` function will nullify the note that it is reading. This means that if two people are trying to use this function with the same note, only one will succeed.
+
+Reading a `PrivateMutable` nullifies and recreates the note. This makes reads indistinguishable from writes and ensures the sequencer cannot learn the note's value.
 :::
 
 #### `replace`
@@ -413,8 +409,6 @@ Unlike a `PrivateMutable`, the `get_note` function for a `PrivateImmutable` does
 #include_code private_immutable /noir-projects/noir-contracts/contracts/test/test_contract/src/main.nr rust
 
 `PrivateImmutable` variables also have the `initialize` and `get_note` functions on them but no `initialize_or_replace` since they cannot be modified.
-
-Unlike a `PrivateMutable`, the `get_note` function for a `PrivateImmutable` doesn't nullify the current note and returns the `Note` directly (not wrapped in `NoteMessage`). This means that multiple accounts can concurrently call this function to read the value.
 
 ### PrivateSet
 
