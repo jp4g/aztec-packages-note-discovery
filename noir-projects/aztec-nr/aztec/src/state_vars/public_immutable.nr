@@ -1,7 +1,7 @@
 use crate::{
     context::{PrivateContext, PublicContext, UtilityContext},
     state_vars::state_variable::StateVariable,
-    utils::with_hash::WithHash,
+    utils::WithHash,
 };
 use protocol_types::{
     constants::DOM_SEP__INITIALIZATION_NULLIFIER, hash::poseidon2_hash_with_separator,
@@ -14,7 +14,7 @@ use protocol_types::{
 /// during initialization and remain permanently unchanged.
 ///
 /// You can declare a state variable of type PublicImmutable within your contract's
-/// #[storage] struct:
+/// [storage](crate::macros::storage::storage) struct:
 ///
 /// E.g.:
 /// `your_variable: PublicImmutable<T, Context>`
