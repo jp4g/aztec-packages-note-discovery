@@ -565,7 +565,7 @@ fn transfer(from: AztecAddress, to: AztecAddress, amount: u128) {
 
     // Access the balance for the 'to' address
     let new_note = UintNote::new(amount, to);
-    self.storage.balances.at(to).insert(new_note).deliver(MessageDelivery.UNCONSTRAINED_ONCHAIN);
+    self.storage.balances.at(to).insert(new_note).deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED);
 }
 ```
 
