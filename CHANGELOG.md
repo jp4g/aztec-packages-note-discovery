@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.4](https://github.com/AztecProtocol/aztec-packages/compare/v3.0.3...v3.0.4) (2026-01-23)
+
+
+### Miscellaneous
+
+* disable latest pushes ([c93db06](https://github.com/AztecProtocol/aztec-packages/commit/c93db06ebffe98dc5b0fb7aae1de521247c14ab5))
+
 ## [3.0.3](https://github.com/AztecProtocol/aztec-packages/compare/v3.0.2...v3.0.3) (2026-01-15)
 
 
