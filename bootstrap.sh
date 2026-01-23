@@ -111,24 +111,13 @@ function check_toolchains {
     echo "  curl -s -L https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-27/wasi-sdk-27.0-x86_64-linux.tar.gz | tar zxf - && sudo mv wasi-sdk-27.0-x86_64-linux /opt/wasi-sdk"
     exit 1
   fi
-  # Check foundry version.
-  local foundry_version="v1.4.1"
-  for tool in forge anvil; do
-    if ! $tool --version 2> /dev/null | grep "${foundry_version#nightly-}" > /dev/null; then
-      echo "$tool not in PATH or incorrect version (requires $foundry_version)."
-      if [ "${CI:-0}" -eq 1 ]; then
-        echo "Attempting install of required foundry version $foundry_version"
-        curl -L https://foundry.paradigm.xyz | bash
-        ~/.foundry/bin/foundryup -i $foundry_version
-      else
-        encourage_dev_container
-        echo "Installation: https://book.getfoundry.sh/getting-started/installation"
-        echo "  curl -L https://foundry.paradigm.xyz | bash"
-        echo "  foundryup -i $foundry_version"
-        exit 1
-      fi
-    fi
-  done
+  # Check foundry version and install if needed.
+  local foundry_version="v1.5.1"
+  if ! forge --version 2> /dev/null | grep "${foundry_version#nightly-}" > /dev/null; then
+    echo "forge not in PATH or incorrect version (requires $foundry_version). Installing..."
+    curl -L https://foundry.paradigm.xyz | bash
+    ~/.foundry/bin/foundryup -i $foundry_version
+  fi
   # Check Node.js version.
   local node_min_version="24.12.0"
   local node_installed_version=$(node --version | cut -d 'v' -f 2)

@@ -9,13 +9,13 @@ import { fileURLToPath } from '@aztec/foundation/url';
 
 import { bn254 } from '@noble/curves/bn254';
 import type { Abi, Narrow } from 'abitype';
-import { spawn } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
 import readline from 'readline';
 import type { Hex } from 'viem';
-import { foundry, mainnet, sepolia } from 'viem/chains';
+import { mainnet, sepolia } from 'viem/chains';
 
 import { createEthereumChain, isAnvilTestChain } from './chain.js';
 import { createExtendedL1Client } from './client.js';
@@ -29,6 +29,18 @@ import type { ExtendedViemWalletClient } from './types.js';
 const logger = createLogger('ethereum:deploy_aztec_l1_contracts');
 
 const JSON_DEPLOY_RESULT_PREFIX = 'JSON DEPLOY RESULT:';
+
+/** Logs the current /tmp usage for debugging tmpfs issues. */
+function logTmpUsage(label: string) {
+  try {
+    const dfOutput = execSync('df -h /tmp', { encoding: 'utf-8' });
+    const duOutput = execSync('du -sh /tmp 2>/dev/null || echo "du failed"', { encoding: 'utf-8' });
+    logger.info(`[TMPFS ${label}] df -h /tmp:\n${dfOutput}`);
+    logger.info(`[TMPFS ${label}] du -sh /tmp: ${duOutput.trim()}`);
+  } catch (e) {
+    logger.warn(`[TMPFS ${label}] Failed to get tmp usage: ${e}`);
+  }
+}
 
 /**
  * Runs a process with the given command, arguments, and environment.
@@ -331,7 +343,7 @@ export async function deployAztecL1Contracts(
     '--rpc-url',
     rpcUrl,
     '--broadcast',
-    ...(chainId === foundry.id ? ['--batch-size', MAGIC_ANVIL_BATCH_SIZE.toString()] : []),
+    ...(isAnvilTestChain(chainId) ? ['--batch-size', MAGIC_ANVIL_BATCH_SIZE.toString()] : []),
     ...(shouldVerify ? ['--verify'] : []),
   ];
   const forgeEnv = {
@@ -340,7 +352,9 @@ export async function deployAztecL1Contracts(
     FOUNDRY_PROFILE: chainId === mainnet.id ? 'production' : undefined,
     ...getDeployAztecL1ContractsEnvVars(args),
   };
+  logTmpUsage('BEFORE forge deploy');
   const result = await runProcess<ForgeL1ContractsDeployResult>('forge', forgeArgs, forgeEnv, l1ContractsPath);
+  logTmpUsage('AFTER forge deploy');
   if (!result) {
     throw new Error('Forge script did not output deployment result');
   }
@@ -582,6 +596,8 @@ export const deployRollupForUpgrade = async (
   const FORGE_SCRIPT = 'script/deploy/DeployRollupForUpgrade.s.sol';
   await maybeForgeForceProductionBuild(l1ContractsPath, FORGE_SCRIPT, chainId);
 
+  // From heuristic testing. More caused issues with anvil.
+  const MAGIC_ANVIL_BATCH_SIZE = 8;
   const forgeArgs = [
     'script',
     FORGE_SCRIPT,
@@ -592,6 +608,7 @@ export const deployRollupForUpgrade = async (
     '--rpc-url',
     rpcUrl,
     '--broadcast',
+    ...(isAnvilTestChain(chainId) ? ['--batch-size', MAGIC_ANVIL_BATCH_SIZE.toString()] : []),
   ];
   const forgeEnv = {
     FOUNDRY_PROFILE: chainId === mainnet.id ? 'production' : undefined,
