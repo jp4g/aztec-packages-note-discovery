@@ -43,7 +43,6 @@ use std::aes128::aes128_encrypt;
  *
  * This function is only known to be safe if shared_secret is computed by combining a 
  * random ephemeral key with an address point. See big comment within the body of the function.
- * See big comment within the body of the function.
  */
 fn extract_many_close_to_uniformly_random_256_bits_from_ecdh_shared_secret_using_poseidon2_unsafe<let N: u32>(
     shared_secret: Point,
@@ -243,8 +242,8 @@ impl MessageEncryption for AES128 {
         header_plaintext[1] = ciphertext_bytes_length as u8;
 
         // Note: the aes128_encrypt builtin fn automatically appends bytes to the
-        // input, according to pkcs#7; hence why the output `header_ciphertext_bytes` is 16
-        // bytes larger than the input in this case.
+        // input, according to pkcs#7; hence why the output `header_ciphertext_bytes` is 14
+        // bytes larger than the input in this case, for a total of 16 bytes.
         let header_ciphertext_bytes = aes128_encrypt(header_plaintext, header_iv, header_sym_key);
         // I recall that converting a slice to an array incurs constraints, so I'll check the length this way instead:
         std::static_assert(
@@ -426,13 +425,20 @@ mod test {
     use crate::{
         keys::ecdh_shared_secret::derive_ecdh_shared_secret,
         messages::{
-            encoding::MESSAGE_PLAINTEXT_LEN, encryption::message_encryption::MessageEncryption,
+            encoding::MESSAGE_PLAINTEXT_LEN,
+            encryption::{
+                message_encryption::MessageEncryption,
+                poseidon2::{poseidon2_decrypt, poseidon2_encrypt},
+            },
         },
         test::helpers::test_environment::TestEnvironment,
     };
     use super::{AES128, random_address_point};
     use protocol_types::{address::AztecAddress, traits::FromField};
-    use std::{embedded_curve_ops::EmbeddedCurveScalar, test::OracleMock};
+    use std::{
+        embedded_curve_ops::{EmbeddedCurveScalar, fixed_base_scalar_mul, multi_scalar_mul},
+        test::OracleMock,
+    };
 
     #[test]
     unconstrained fn encrypt_decrypt_deterministic() {
@@ -542,5 +548,15 @@ mod test {
 
             assert(AES128::decrypt(bad_ciphertext, recipient).is_none());
         });
+    }
+
+    // Test to verify behavior when plaintext exceeds MESSAGE_PLAINTEXT_LEN (14 fields).
+    // This should fail at compile time if proper bounds checking is in place.
+    #[test]
+    unconstrained fn encrypt_oversized_plaintext_should_fail() {
+        let invalid_address = AztecAddress { inner: 3 };
+        // MESSAGE_PLAINTEXT_LEN is 14, so 15 fields should exceed the limit
+        let oversized_plaintext: [Field; 15] = [0; 15];
+        let _ = AES128::encrypt(oversized_plaintext, invalid_address);
     }
 }

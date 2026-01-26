@@ -1,0 +1,115 @@
+{
+  "skill": "aztec-nr-audit-feature-interactions",
+  "status": "COMPLETED_WITH_FINDINGS",
+  "features_enumerated": 28,
+  "interactions_analyzed": 10,
+  "findings": [
+    {
+      "id": "interaction-authorize_once-initializer-zero_deployer",
+      "features": ["#[authorize_once]", "#[initializer]", "zero deployer"],
+      "interaction": "When #[authorize_once] is combined with #[initializer] and contract deployed with zero deployer",
+      "issue": "authorize_once provides no additional access control when deployer is zero. The check order is: (1) assert_initialization_matches_address_preimage_private (allows anyone if deployer==0), then (2) authorize_once_check. If caller sets from=msg_sender (themselves), the check passes with nonce=0.",
+      "severity": "medium",
+      "evidence": "private.nr:176-185 shows check order. When from==msg_sender, only nonce==0 is validated (helpers.nr:107-111). Caller controls both from and nonce parameters.",
+      "exploitability": "medium",
+      "fix": "Document that authorize_once on initializers requires non-zero deployer for access control, or add explicit deployer check within authorize_once when is_fn_initializer"
+    },
+    {
+      "id": "interaction-noinitcheck-uninitialized-storage",
+      "features": ["#[noinitcheck]", "storage reads"],
+      "interaction": "Functions with #[noinitcheck] reading storage that is only set during initialization",
+      "issue": "Functions can be called before initialization completes, reading uninitialized (zero) values. Critical security checks (like owner == msg_sender) may pass unexpectedly if owner is zero.",
+      "severity": "high",
+      "evidence": "private.nr:97-101 shows init_check is skipped when fn_has_noinitcheck(f). No runtime protection for storage reads.",
+      "exploitability": "high",
+      "fix": "Framework should warn or error when #[noinitcheck] functions read storage fields that are only written in #[initializer]. Alternatively, provide assert_is_initialized_unsafe() for explicit opt-in."
+    },
+    {
+      "id": "interaction-public-init-f239-unsafe",
+      "features": ["#[initializer]", "#[external(\"public\")]", "initialization check"],
+      "interaction": "Public functions in contracts with initializers may be callable before initialization",
+      "issue": "assert_is_initialized_public uses nullifier_exists_unsafe which is documented as unsafe (F-239). Public functions may execute before the initialization nullifier is confirmed to exist.",
+      "severity": "high",
+      "evidence": "initialization_utils.nr:29-37: 'TODO(F-239) - this is currently unsafe, we cannot rely on the nullifier existing to determine that any public component of contract initialization has been complete.'",
+      "exploitability": "medium",
+      "fix": "Track F-239 resolution. Consider adding framework-level warning when contracts have both #[initializer] and public functions that read initialized state."
+    },
+    {
+      "id": "interaction-nophasecheck-phase-dependent-ops",
+      "features": ["#[nophasecheck]", "phase-sensitive operations"],
+      "interaction": "Functions with #[nophasecheck] performing operations that depend on specific phases",
+      "issue": "nophasecheck disables phase transition validation but doesn't prevent calling phase-dependent operations. Operations expecting revertible phase may be called in non-revertible phase or vice versa.",
+      "severity": "low",
+      "evidence": "private.nr:104-120: initial_phase_store and no_phase_change_check are both empty when fn_has_nophasecheck. No validation of which phase operations occur in.",
+      "exploitability": "low",
+      "fix": "Document which operations are phase-sensitive. Consider compile-time warnings for nophasecheck functions calling phase-dependent methods."
+    },
+    {
+      "id": "interaction-only_self-hide_msg_sender",
+      "features": ["#[only_self]", "hide_msg_sender in enqueued calls"],
+      "interaction": "Private function enqueuing public call with hide_msg_sender=true to an #[only_self] function",
+      "issue": "When hide_msg_sender is true, msg_sender is set to NULL_MSG_SENDER_CONTRACT_ADDRESS. An #[only_self] check will fail unexpectedly because msg_sender != this_address.",
+      "severity": "low",
+      "evidence": "private_context.nr:1601-1605: msg_sender is set to NULL_MSG_SENDER_CONTRACT_ADDRESS when hide_msg_sender is true. public.nr:67-73: only_self checks msg_sender() == self.address",
+      "exploitability": "low",
+      "fix": "Document interaction. Consider compile-time or runtime warning when enqueueing to #[only_self] functions with hide_msg_sender."
+    },
+    {
+      "id": "interaction-privateset-external-insert",
+      "features": ["PrivateSet", "external note insertion"],
+      "interaction": "External contracts inserting notes into another contract's PrivateSet",
+      "issue": "Anyone can insert notes into a PrivateSet. The owner of the PrivateSet (not the inserter) becomes the owner who can nullify. Inserter loses control of inserted value/notes.",
+      "severity": "medium",
+      "evidence": "private_set.nr:87-91 documents this: 'other people can insert notes into the set' but 'owner is still the only person with ability to remove notes'",
+      "exploitability": "medium",
+      "fix": "Framework should provide clear documentation/patterns for when external insertion is intended vs when it's a footgun. Consider PrivateSetRestricted that only allows owner to insert."
+    },
+    {
+      "id": "interaction-view-note-read-requests",
+      "features": ["#[view]", "note read operations"],
+      "interaction": "View functions reading notes create read requests as side effects",
+      "issue": "The #[view] check only validates is_static_call flag. Note reads push to note_hash_read_requests which is a side effect. In static calls, these side effects may still be recorded.",
+      "severity": "low",
+      "evidence": "private.nr:78-85 shows view_check only checks is_static_call. private_context.nr:183 shows note_hash_read_requests are tracked. Static call enforcement at kernel level needs verification.",
+      "exploitability": "low",
+      "fix": "Verify kernel properly handles/discards read requests from static calls. Document that view functions can still generate read requests."
+    },
+    {
+      "id": "interaction-nested-authwit-scope",
+      "features": ["AuthWit", "nested private calls"],
+      "interaction": "AuthWit validation in nested call contexts",
+      "issue": "AuthWit nullifiers include on_behalf_of and inner_hash (caller, selector, args_hash). In nested calls, each call level has different msg_sender. AuthWit granted for outer call doesn't authorize inner calls.",
+      "severity": "low",
+      "evidence": "auth.nr:261-274: inner_hash computed from context.msg_sender(), context.selector(), args_hash. Each nested call has unique combination.",
+      "exploitability": "low",
+      "fix": "This is correct behavior but should be documented clearly. Users expecting transitive authorization need explicit nested authwit setup."
+    },
+    {
+      "id": "interaction-multiple-initializers",
+      "features": ["#[initializer]", "multiple functions"],
+      "interaction": "Contract with multiple #[initializer] functions",
+      "issue": "Framework allows multiple functions to have #[initializer]. The init nullifier is the contract address, so calling any initializer prevents all others. First caller wins.",
+      "severity": "low",
+      "evidence": "initialization_utils.nr:45-47: compute_unsiloed_contract_initialization_nullifier returns address.to_field() regardless of which initializer. private.nr allows multiple initializers at compile time.",
+      "exploitability": "low",
+      "fix": "Consider compile-time warning for multiple initializers, or document intended use cases (e.g., different initialization paths)."
+    },
+    {
+      "id": "interaction-storage-reordering-footgun",
+      "features": ["#[storage]", "storage slot assignment"],
+      "interaction": "Reordering storage struct fields between contract versions",
+      "issue": "Storage slots are assigned sequentially starting at 1 based on field order (storage.nr:34, slot=1, then slot+=storage_size). Reordering fields changes slot assignments, corrupting data.",
+      "severity": "medium",
+      "evidence": "storage.nr:34-81: 'let mut slot: u32 = 1' and 'slot += storage_size' show position-based assignment with no field name consideration.",
+      "exploitability": "high",
+      "fix": "Consider generating stable slot assignments based on field names (e.g., hash(contract_name, field_name)) or add tooling to detect storage layout changes."
+    }
+  ],
+  "recommendations": [
+    "Add compile-time validation for dangerous attribute combinations",
+    "Track F-239 resolution for public initialization safety",
+    "Provide clearer documentation for feature interactions",
+    "Consider stable storage slot derivation based on field names",
+    "Add PrivateSetRestricted or similar for controlled insertion patterns"
+  ]
+}

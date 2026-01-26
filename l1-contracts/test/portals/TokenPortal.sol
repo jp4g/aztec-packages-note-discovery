@@ -119,9 +119,9 @@ contract TokenPortal {
    * @param _amount - The amount to withdraw
    * @param _withCaller - Flag to use `msg.sender` as caller, otherwise address(0)
    * @param _epoch - The epoch the message is in
-   * @param _leafIndex - The amount to withdraw
-   * @param _path - Flag to use `msg.sender` as caller, otherwise address(0)
-   * Must match the caller of the message (specified from L2) to consume it.
+   * @param _leafIndex - In the Outbox, the index at the level in the wonky tree where the message is located
+   * @param _path - The sibling path used to prove inclusion of the message, the _path length depends
+   * on the location of the L2 to L1 message in the wonky tree.
    */
   function withdraw(
     address _recipient,

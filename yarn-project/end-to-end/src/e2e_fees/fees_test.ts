@@ -10,7 +10,6 @@ import { BlockNumber } from '@aztec/foundation/branded-types';
 import { EthAddress } from '@aztec/foundation/eth-address';
 import { sleep } from '@aztec/foundation/sleep';
 import { TestERC20Abi } from '@aztec/l1-artifacts';
-import { AppSubscriptionContract } from '@aztec/noir-contracts.js/AppSubscription';
 import { FPCContract } from '@aztec/noir-contracts.js/FPC';
 import { FeeJuiceContract } from '@aztec/noir-contracts.js/FeeJuice';
 import { SponsoredFPCContract } from '@aztec/noir-contracts.js/SponsoredFPC';
@@ -73,7 +72,7 @@ export class FeesTest {
   public bananaFPC!: FPCContract;
   public sponsoredFPC!: SponsoredFPCContract;
   public counterContract!: CounterContract;
-  public subscriptionContract!: AppSubscriptionContract;
+  // public subscriptionContract!: AppSubscriptionContract;
   public feeJuiceBridgeTestHarness!: GasBridgingTestHarness;
 
   public chainMonitor!: ChainMonitor;

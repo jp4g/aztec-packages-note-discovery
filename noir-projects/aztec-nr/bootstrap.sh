@@ -26,6 +26,8 @@ function test_cmds {
 }
 
 function test {
+  local test_filter="$1"
+
   # Start txe server.
   trap 'kill $(jobs -p)' EXIT
   (cd $root/yarn-project/txe && LOG_LEVEL=error TXE_PORT=45730 yarn start) &
@@ -33,10 +35,19 @@ function test {
   while ! nc -z 127.0.0.1 45730 &>/dev/null; do sleep 1; done
 
   export NARGO_FOREIGN_CALL_TIMEOUT=300000
-  test_cmds | filter_test_cmds | parallelize
-
-  # Run the macro compilation failure tests
-  ./macro_compilation_failure_tests/assert_macro_compilation_failure.sh
+  if [ -n "$test_filter" ]; then
+    # Run matching tests directly with verbose output
+    $NARGO test --list-tests --silence-warnings | sort | while read -r package test; do
+      if [[ "$test" == *"$test_filter"* ]]; then
+        echo "Running: $package::$test"
+        $root/noir-projects/scripts/run_test.sh aztec-nr "$package" "$test" 45730
+      fi
+    done
+  else
+    test_cmds | filter_test_cmds | parallelize
+    # Run the macro compilation failure tests
+    ./macro_compilation_failure_tests/assert_macro_compilation_failure.sh
+  fi
 }
 
 function format {

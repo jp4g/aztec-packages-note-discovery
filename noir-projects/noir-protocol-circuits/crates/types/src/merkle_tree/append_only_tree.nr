@@ -28,6 +28,28 @@ pub fn append_leaf_to_snapshot_sha<let TreeHeight: u32>(
     )
 }
 
+/// Insert a batch of leaves into an append-only Merkle tree by inserting a precomputed subtree root.
+///
+/// Instead of inserting leaves one at a time (each requiring a full merkle proof of `TreeHeight` hashes),
+/// this function enables batch insertion by treating the tree as a smaller "top tree" where each "leaf"
+/// is itself the root of a subtree of height `SubtreeHeight`.
+///
+/// For example, the L1-to-L2 message tree has height 36. Messages are inserted in batches of 1024
+/// (subtree height 10). Rather than 1024 insertions with 36-element sibling paths each, we:
+///   1. Compute the subtree root of the 1024 messages externally
+///   2. Insert that single root into the top tree (height 26) with a 26-element sibling path
+///
+/// The function verifies that the insertion location currently contains an empty subtree (all zeros),
+/// ensuring this is truly an append operation. It then computes the new tree root by replacing the
+/// empty subtree root with the provided subtree root.
+///
+/// Parameters:
+/// - `snapshot`: Current tree state (root and next available leaf index)
+/// - `sibling_path`: Merkle sibling path in the top tree (length = TreeHeight - SubtreeHeight)
+/// - `subtree_root_to_insert`: Root of the subtree containing the new leaves
+///
+/// Returns:
+/// - New snapshot with updated root and next_available_leaf_index advanced by 2^SubtreeHeight
 pub fn insert_subtree_root_to_snapshot<let TreeHeight: u32, let SubtreeHeight: u32>(
     snapshot: AppendOnlyTreeSnapshot,
     sibling_path: [Field; TreeHeight - SubtreeHeight],
