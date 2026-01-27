@@ -316,6 +316,7 @@ await wallet.registerContract(instance, MyContract.artifact);
 
 ## Next steps
 
+- [Contract Readiness States](../aztec-nr/contract_readiness_states.md) - Understand the different states a contract progresses through
 - [Send transactions](./how_to_send_transaction.md) to interact with your contract
 - [Read contract data](./how_to_read_data.md) including simulating functions and reading events
 - [Use authentication witnesses](./how_to_use_authwit.md) for delegated calls

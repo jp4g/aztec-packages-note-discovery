@@ -79,4 +79,6 @@ The `ContractInstanceRegistry` and `ContractClassRegistry` contracts are protoco
 
 ## Further reading
 
-To see how to deploy a contract in practice, check out the [dapp development tutorial](../tutorials/js_tutorials/aztecjs-getting-started.md).
+- [Contract Readiness States](../aztec-nr/contract_readiness_states.md) - Understand the different states a contract progresses through and when functions become callable
+- [Deploying Contracts](../aztec-js/how_to_deploy_contract.md) - Deploy contracts using TypeScript
+- [DApp Development Tutorial](../tutorials/js_tutorials/aztecjs-getting-started.md) - Build a complete application
