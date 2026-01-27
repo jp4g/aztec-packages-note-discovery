@@ -4,8 +4,8 @@
 
 ## FINDING-006: Missing plaintext length validation in AES128::encrypt
 
-**Severity:** Medium
-**File:** `aztec/src/messages/encryption/aes128.nr:159`
+- **Severity:** Medium
+- **File:** `aztec/src/messages/encryption/aes128.nr:159`
 
 ### Description
 
@@ -29,8 +29,8 @@ std::static_assert(
 
 ## FINDING-005: Redundant intermediate array in AES key derivation
 
-**Severity:** Efficiency
-**File:** `aztec/src/messages/encryption/aes128.nr:47-154`
+- **Severity:** Efficiency
+- **File:** `aztec/src/messages/encryption/aes128.nr:47-154`
 
 ### Description
 
@@ -44,8 +44,10 @@ Combine into a single function that directly populates `([u8; 16], [u8; 16])` pa
 
 ## FINDING-004: Inline division could use precomputed constant
 
-**Severity:** Efficiency
-**File:** `noir-protocol-circuits/crates/types/src/address/aztec_address.nr:73-74`
+- **Severity:** Efficiency
+- **File:** `noir-protocol-circuits/crates/types/src/address/aztec_address.nr:73-74`
+- **Resolution:** Won't fix. The compiler optimizes this well enough.
+
 
 ### Description
 
@@ -59,8 +61,8 @@ Export and reuse the existing constant, or add `MAX_FIELD_VALUE_DIV_2` to `const
 
 ## FINDING-003: No versioning in encrypted message format
 
-**Severity:** Medium
-**File:** `aztec/src/messages/encryption/aes128.nr`, `aztec/src/messages/encoding.nr`
+- **Severity:** Medium
+- **File:** `aztec/src/messages/encryption/aes128.nr`, `aztec/src/messages/encoding.nr`
 
 ### Description
 
@@ -82,8 +84,8 @@ Add an unencrypted prefix byte before the ephemeral public key indicating encryp
 
 ## FINDING-002: AES-128 encryption lacks message authentication (MAC)
 
-**Severity:** Low
-**File:** `aztec/src/messages/encryption/aes128.nr`
+- **Severity:** Low
+- **File:** `aztec/src/messages/encryption/aes128.nr`
 
 ### Description
 
@@ -114,8 +116,8 @@ Consider implementing AES-GCM or adding HMAC for authenticated encryption. Alter
 
 ## FINDING-001: MessageDelivery encryption constraint logic is inverted
 
-**Severity:** Medium
-**File:** `aztec/src/messages/message_delivery.nr:205-213`
+- **Severity:** Medium
+- **File:** `aztec/src/messages/message_delivery.nr:205-213`
 
 ### Description
 
