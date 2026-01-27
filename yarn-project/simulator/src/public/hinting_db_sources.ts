@@ -143,6 +143,10 @@ export class HintingPublicContractsDB implements PublicContractsDBInterface {
     return name;
   }
 
+  public getDebugContractName(address: AztecAddress): Promise<string | undefined> {
+    return this.db.getDebugContractName(address);
+  }
+
   public createCheckpoint(): void {
     const hintKey = this.getHintKey();
     this.checkpointActionCounter++;

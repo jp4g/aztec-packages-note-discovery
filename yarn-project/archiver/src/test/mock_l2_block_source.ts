@@ -457,6 +457,10 @@ export class MockL2BlockSource implements L2BlockSource, ContractDataSource {
     return Promise.resolve(undefined);
   }
 
+  getDebugContractName(_address: AztecAddress): Promise<string | undefined> {
+    return Promise.resolve(undefined);
+  }
+
   registerContractFunctionSignatures(_signatures: string[]): Promise<void> {
     return Promise.resolve();
   }

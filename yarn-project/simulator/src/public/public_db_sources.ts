@@ -169,6 +169,10 @@ export class PublicContractsDB implements PublicContractsDBInterface {
     return await this.dataSource.getDebugFunctionName(address, selector);
   }
 
+  public getDebugContractName(address: AztecAddress): Promise<string | undefined> {
+    return this.dataSource.getDebugContractName(address);
+  }
+
   private async addContractClassesFromEvents(
     contractClassEvents: ContractClassPublishedEvent[],
     state: ContractsDbCheckpoint,

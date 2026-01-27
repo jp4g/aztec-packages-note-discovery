@@ -1,3 +1,4 @@
+import type { EnvVar } from '@aztec/foundation/config';
 import { PublicSimulatorConfig } from '@aztec/stdlib/avm';
 import type { MerkleTreeWriteOperations } from '@aztec/stdlib/trees';
 import type { GlobalVariables } from '@aztec/stdlib/tx';
@@ -20,7 +21,7 @@ export function createPublicTxSimulatorForBlockBuilding(
 ) {
   const config = PublicSimulatorConfig.from({
     skipFeeEnforcement: false,
-    collectDebugLogs: false,
+    collectDebugLogs: !!process.env['CONTRACT_LOG_LEVEL' satisfies EnvVar],
     collectHints: false,
     collectPublicInputs: false,
     collectStatistics: false,

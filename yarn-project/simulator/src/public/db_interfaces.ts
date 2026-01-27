@@ -59,6 +59,9 @@ export interface PublicContractsDBInterface {
    */
   getDebugFunctionName(contractAddress: AztecAddress, selector: FunctionSelector): Promise<string | undefined>;
 
+  /** Returns a contract's name for debug logging. May return undefined if name is not available. */
+  getDebugContractName(address: AztecAddress): Promise<string | undefined>;
+
   /**
    * Creates a checkpoint of the current contract state.
    */

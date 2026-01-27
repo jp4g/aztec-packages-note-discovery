@@ -94,6 +94,7 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
   isTxe = true as const;
 
   private logger: Logger;
+  private contractDebugLogger: Logger | undefined;
 
   constructor(
     private stateMachine: TXEStateMachine,
@@ -132,13 +133,16 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
   }
 
   // We instruct users to debug contracts via this oracle, so it makes sense that they'd expect it to also work in tests
-  utilityDebugLog(level: number, message: string, fields: Fr[]): void {
+  utilityDebugLog(level: number, message: string, fields: Fr[]): Promise<void> {
     if (!LogLevels[level]) {
       throw new Error(`Invalid debug log level: ${level}`);
     }
+    if (!this.contractDebugLogger) {
+      this.contractDebugLogger = createLogger('contract_log::txe');
+    }
     const levelName = LogLevels[level];
-
-    this.logger[levelName](`${applyStringFormatting(message, fields)}`, { module: `${this.logger.module}:debug_log` });
+    this.contractDebugLogger[levelName](`${applyStringFormatting(message, fields)}`);
+    return Promise.resolve();
   }
 
   txeGetDefaultAddress(): AztecAddress {

@@ -137,6 +137,7 @@ export const ArchiverApiSchema: ApiSchemaFor<ArchiverApi> = {
   getL1ToL2Messages: z.function().args(CheckpointNumberSchema).returns(z.array(schemas.Fr)),
   getL1ToL2MessageIndex: z.function().args(schemas.Fr).returns(schemas.BigInt.optional()),
   getDebugFunctionName: z.function().args(schemas.AztecAddress, schemas.FunctionSelector).returns(optional(z.string())),
+  getDebugContractName: z.function().args(schemas.AztecAddress).returns(optional(z.string())),
   getL1Constants: z.function().args().returns(L1RollupConstantsSchema),
   getGenesisValues: z
     .function()

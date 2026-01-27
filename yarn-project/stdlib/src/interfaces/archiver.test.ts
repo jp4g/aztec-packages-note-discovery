@@ -281,6 +281,11 @@ describe('ArchiverApiSchema', () => {
     expect(result).toEqual(artifact.functions[0].name);
   });
 
+  it('getDebugContractName', async () => {
+    const result = await context.client.getDebugContractName(await AztecAddress.random());
+    expect(result).toEqual(artifact.name);
+  });
+
   it('getBytecodeCommitment', async () => {
     const contractClass = await getContractClassFromArtifact(artifact);
     const result = await context.client.getBytecodeCommitment(Fr.random());
@@ -569,6 +574,10 @@ class MockArchiver implements ArchiverApi {
       })),
     );
     return functionsAndSelectors.find(f => f.selector.equals(selector))?.name;
+  }
+  getDebugContractName(address: AztecAddress): Promise<string | undefined> {
+    expect(address).toBeInstanceOf(AztecAddress);
+    return Promise.resolve(this.artifact.name);
   }
   async getContract(address: AztecAddress, timestamp?: bigint): Promise<ContractInstanceWithAddress | undefined> {
     expect(timestamp).toEqual(27n);

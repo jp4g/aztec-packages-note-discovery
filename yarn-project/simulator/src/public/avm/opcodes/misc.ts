@@ -1,4 +1,4 @@
-import { LogLevels, applyStringFormatting, createLogger } from '@aztec/foundation/log';
+import { LogLevels, type Logger, applyStringFormatting, createLogger } from '@aztec/foundation/log';
 
 import type { AvmContext } from '../avm_context.js';
 import { TypeTag } from '../avm_memory_types.js';
@@ -6,10 +6,12 @@ import { Opcode, OperandType } from '../serialization/instruction_serialization.
 import { Addressing } from './addressing_mode.js';
 import { Instruction } from './instruction.js';
 
+/** Cache of per-contract loggers keyed by address string. */
+const contractLoggers: Map<string, Logger> = new Map();
+
 export class DebugLog extends Instruction {
   static type: string = 'DEBUGLOG';
   static readonly opcode: Opcode = Opcode.DEBUGLOG;
-  static readonly logger = createLogger('simulator:avm:debug_log');
 
   // Informs (de)serialization. See Instruction.deserialize.
   static readonly wireFormat: OperandType[] = [
@@ -88,14 +90,25 @@ export class DebugLog extends Instruction {
         fields.map(field => field.toFr()),
       );
 
+      // Build per-contract logger.
+      const addrStr = context.environment.address.toString();
+      let logger = contractLoggers.get(addrStr);
+      if (!logger) {
+        const addrAbbrev = addrStr.slice(0, 10);
+        const name = await context.persistableState.getDebugContractName(context.environment.address);
+        const module = name ? `contract_log::${name}(${addrAbbrev})` : `contract_log::${addrAbbrev}`;
+        logger = createLogger(module);
+        contractLoggers.set(addrStr, logger);
+      }
+
       // Skips string formatting if the level is disabled.
-      if (DebugLog.logger.isLevelEnabled(level)) {
+      if (logger.isLevelEnabled(level)) {
         const formattedStr = applyStringFormatting(
           messageAsStr,
           fields.map(field => field.toFr()),
         );
 
-        DebugLog.logger[level](formattedStr);
+        logger[level](formattedStr);
       }
     }
   }

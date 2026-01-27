@@ -80,6 +80,10 @@ export class TXEPublicContractDataSource implements ContractDataSource {
     return await this.contractStore.getDebugFunctionName(address, selector);
   }
 
+  getDebugContractName(address: AztecAddress): Promise<string | undefined> {
+    return this.contractStore.getDebugContractName(address);
+  }
+
   registerContractFunctionSignatures(_signatures: []): Promise<void> {
     return Promise.resolve();
   }

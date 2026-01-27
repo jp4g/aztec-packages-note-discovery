@@ -1,7 +1,6 @@
 import { LogLevels } from '@aztec/foundation/log';
 import { CollectionLimitsConfig, PublicSimulatorConfig } from '@aztec/stdlib/avm';
 
-import { jest } from '@jest/globals';
 import { mock } from 'jest-mock-extended';
 
 import type { PublicSideEffectTraceInterface } from '../../side_effect_trace_interface.js';
@@ -61,37 +60,27 @@ describe('Misc Instructions', () => {
       context.machineState.memory.set(fieldsOffset, fieldValue);
       context.machineState.memory.set(fieldsSizeOffset, new Uint32(1n)); // One field value
 
-      // Mock verbose logger
-      const mockIsVerbose = jest.spyOn(DebugLog.logger, 'isLevelEnabled').mockImplementation(() => true);
-      const mockVerbose = jest.spyOn(DebugLog.logger, 'verbose').mockImplementation(() => {});
+      // Execute debug log instruction
+      await new DebugLog(
+        /*addressing_mode=*/ 0,
+        /*levelOffset=*/ levelOffset,
+        /*messageOffset=*/ messageOffset,
+        /*fieldsOffset=*/ fieldsOffset,
+        /*fieldsSizeOffset=*/ fieldsSizeOffset,
+        /*messageSize=*/ messageSize,
+      ).execute(context);
 
-      try {
-        // Execute debug log instruction
-        await new DebugLog(
-          /*addressing_mode=*/ 0,
-          /*levelOffset=*/ levelOffset,
-          /*messageOffset=*/ messageOffset,
-          /*fieldsOffset=*/ fieldsOffset,
-          /*fieldsSizeOffset=*/ fieldsSizeOffset,
-          /*messageSize=*/ messageSize,
-        ).execute(context);
-
-        // Check that logger.verbose was called with formatted message
-        expect(mockVerbose).toHaveBeenCalledWith(`Hello ${fieldValue.toFr()}!`);
-        expect(trace.traceDebugLogMemoryReads).toHaveBeenCalledWith(1 + 1 + 10 + 1);
-        expect(trace.traceDebugLog).toHaveBeenCalledWith(context.environment.address, 'verbose', message, [
-          fieldValue.toFr(),
-        ]);
-      } finally {
-        // Restore the mock
-        mockIsVerbose.mockRestore();
-        mockVerbose.mockRestore();
-      }
+      // Check that the trace was called correctly
+      expect(trace.traceDebugLogMemoryReads).toHaveBeenCalledWith(1 + 1 + 10 + 1);
+      expect(trace.traceDebugLog).toHaveBeenCalledWith(context.environment.address, 'verbose', message, [
+        fieldValue.toFr(),
+      ]);
     });
 
     it('DebugLog should be a no-op when not asked to collect debug logs', async () => {
+      const trace = mock<PublicSideEffectTraceInterface>();
       const env = initExecutionEnvironment({ config: PublicSimulatorConfig.from({ collectDebugLogs: false }) });
-      const context = initContext({ env });
+      const context = initContext({ env, persistableState: initPersistableStateManager({ trace }) });
       // Set up memory with message and fields
       const messageOffset = 10;
       const fieldsOffset = 100;
@@ -101,26 +90,18 @@ describe('Misc Instructions', () => {
       // fieldsSizeOffset still needs to be set because its tag is checked
       context.machineState.memory.set(fieldsSizeOffset, new Uint32(1n)); // One field value
 
-      // Mock verbose logger
-      const mockVerbose = jest.spyOn(DebugLog.logger, 'verbose').mockImplementation(() => {});
+      // Execute debug log instruction
+      await new DebugLog(
+        /*addressing_mode=*/ 0,
+        /*level=*/ 0,
+        /*messageOffset=*/ messageOffset,
+        /*fieldsOffset=*/ fieldsOffset,
+        /*fieldsSizeOffset=*/ fieldsSizeOffset,
+        /*messageSize=*/ messageSize,
+      ).execute(context);
 
-      try {
-        // Execute debug log instruction
-        await new DebugLog(
-          /*addressing_mode=*/ 0,
-          /*level=*/ 0,
-          /*messageOffset=*/ messageOffset,
-          /*fieldsOffset=*/ fieldsOffset,
-          /*fieldsSizeOffset=*/ fieldsSizeOffset,
-          /*messageSize=*/ messageSize,
-        ).execute(context);
-
-        // Verify the logger was not called
-        expect(mockVerbose).not.toHaveBeenCalled();
-      } finally {
-        // Restore the mock
-        mockVerbose.mockRestore();
-      }
+      // Verify the trace was not called
+      expect(trace.traceDebugLog).not.toHaveBeenCalled();
     });
 
     it('Should fail when max debug log memory reads is exceeded', async () => {

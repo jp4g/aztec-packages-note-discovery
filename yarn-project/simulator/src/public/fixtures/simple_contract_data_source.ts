@@ -106,6 +106,11 @@ export class SimpleContractDataSource implements ContractDataSource {
     return fnName;
   }
 
+  async getDebugContractName(address: AztecAddress): Promise<string | undefined> {
+    const artifact = await this.getContractArtifact(address);
+    return artifact?.name;
+  }
+
   registerContractFunctionSignatures(_signatures: string[]): Promise<void> {
     return Promise.resolve();
   }

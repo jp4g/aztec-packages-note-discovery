@@ -532,6 +532,10 @@ export class PublicPersistableStateManager {
     return await getPublicFunctionSelectorAndName(this.contractsDB, avmEnvironment.address, avmEnvironment.calldata);
   }
 
+  public getDebugContractName(address: AztecAddress): Promise<string | undefined> {
+    return this.contractsDB.getDebugContractName(address);
+  }
+
   public async padTree(treeId: MerkleTreeId, leavesToInsert: number): Promise<void> {
     await this.treesDB.padTree(treeId, leavesToInsert);
   }

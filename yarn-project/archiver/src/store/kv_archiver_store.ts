@@ -113,6 +113,11 @@ export class KVArchiverDataStore implements ContractDataSource {
     return Promise.resolve(this.functionNames.get(selector.toString()));
   }
 
+  /** Returns a contract's name for debug logging. Not available in the archiver. */
+  getDebugContractName(_address: AztecAddress): Promise<string | undefined> {
+    return Promise.resolve(undefined);
+  }
+
   /** Register a public function signature, so it can be looked up by selector. */
   async registerContractFunctionSignatures(signatures: string[]): Promise<void> {
     for (const sig of signatures) {

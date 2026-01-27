@@ -209,6 +209,10 @@ export abstract class ArchiverDataSourceBase
     return this.store.getDebugFunctionName(address, selector);
   }
 
+  public getDebugContractName(address: AztecAddress): Promise<string | undefined> {
+    return this.store.getDebugContractName(address);
+  }
+
   public registerContractFunctionSignatures(signatures: string[]): Promise<void> {
     return this.store.registerContractFunctionSignatures(signatures);
   }

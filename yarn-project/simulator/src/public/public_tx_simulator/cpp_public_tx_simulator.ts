@@ -1,4 +1,4 @@
-import { type Logger, createLogger, logLevel } from '@aztec/foundation/log';
+import { type Logger, applyStringFormatting, createLogger, logLevel } from '@aztec/foundation/log';
 import { sleep } from '@aztec/foundation/sleep';
 import { type CancellationToken, avmSimulate, cancelSimulation, createCancellationToken } from '@aztec/native';
 import { ProtocolContractsList } from '@aztec/protocol-contracts';
@@ -10,6 +10,7 @@ import {
   deserializeFromMessagePack,
 } from '@aztec/stdlib/avm';
 import { SimulationError } from '@aztec/stdlib/errors';
+import type { DebugLog } from '@aztec/stdlib/logs';
 import type { MerkleTreeWriteOperations } from '@aztec/stdlib/trees';
 import type { GlobalVariables, Tx } from '@aztec/stdlib/tx';
 import { WorldStateRevisionWithHandle } from '@aztec/stdlib/world-state';
@@ -26,6 +27,9 @@ import type {
   MeasuredPublicTxSimulatorInterface,
   PublicTxSimulatorInterface,
 } from './public_tx_simulator_interface.js';
+
+/** Cache of per-contract loggers for public debug logs, keyed by address string. */
+const contractLoggers: Map<string, Logger> = new Map();
 
 /**
  * C++ implementation of PublicTxSimulator using the C++ simulator.
@@ -133,6 +137,9 @@ export class CppPublicTxSimulator extends PublicTxSimulator implements PublicTxS
       cppGasUsed: cppResult.gasUsed.totalGas.l2Gas,
     });
 
+    // Output collected debug logs from public execution using per-contract loggers.
+    await this.emitDebugLogs(cppResult.logs);
+
     return cppResult;
   }
 
@@ -146,6 +153,27 @@ export class CppPublicTxSimulator extends PublicTxSimulator implements PublicTxS
    *                        (e.g., pad_trees) and won't check the cancellation flag until it completes.
    *                        Default timeout of 100ms after cancellation.
    */
+  /** Outputs collected debug logs from public execution using per-contract loggers. */
+  private async emitDebugLogs(logs: DebugLog[] | undefined): Promise<void> {
+    if (!logs?.length) {
+      return;
+    }
+    for (const debugLog of logs) {
+      const addrStr = debugLog.contractAddress.toString();
+      let logger = contractLoggers.get(addrStr);
+      if (!logger) {
+        const addrAbbrev = addrStr.slice(0, 10);
+        const name = await this.contractsDB.getDebugContractName(debugLog.contractAddress);
+        const module = name ? `contract_log::${name}(${addrAbbrev})` : `contract_log::${addrAbbrev}`;
+        logger = createLogger(module);
+        contractLoggers.set(addrStr, logger);
+      }
+      if (logger.isLevelEnabled(debugLog.level)) {
+        logger[debugLog.level](applyStringFormatting(debugLog.message, debugLog.fields));
+      }
+    }
+  }
+
   public async cancel(waitTimeoutMs: number = 100): Promise<void> {
     if (this.cancellationToken) {
       this.log.debug('Cancelling C++ simulation');

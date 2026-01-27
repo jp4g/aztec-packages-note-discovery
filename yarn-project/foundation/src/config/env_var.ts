@@ -78,6 +78,7 @@ export type EnvVar =
   | 'LOG_JSON'
   | 'LOG_MULTILINE'
   | 'LOG_LEVEL'
+  | 'CONTRACT_LOG_LEVEL'
   | 'MNEMONIC'
   | 'NETWORK'
   | 'NETWORK_CONFIG_LOCATION'

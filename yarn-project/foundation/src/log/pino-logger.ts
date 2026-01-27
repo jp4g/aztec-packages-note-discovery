@@ -9,12 +9,12 @@ import type { EnvVar } from '../config/index.js';
 import { parseBooleanEnv } from '../config/parse-env.js';
 import { GoogleCloudLoggerConfig } from './gcloud-logger-config.js';
 import { getLogLevelFromFilters, parseEnv } from './log-filters.js';
-import type { LogLevel } from './log-levels.js';
+import { type LogLevel, LogLevels } from './log-levels.js';
 import type { LogData, LogFn } from './log_fn.js';
 
 export function createLogger(module: string): Logger {
   module = logNameHandlers.reduce((moduleName, handler) => handler(moduleName), module.replace(/^aztec:/, ''));
-  const pinoLogger = logger.child({ module }, { level: getLogLevelFromFilters(logFilters, module) });
+  const pinoLogger = logger.child({ module }, { level: getLogLevelFromFilters(logFilters, module) ?? logLevel });
 
   // We check manually for isLevelEnabled to avoid calling processLogData unnecessarily.
   // Note that isLevelEnabled is missing from the browser version of pino.
@@ -98,6 +98,25 @@ function isLevelEnabled(logger: pino.Logger<'verbose', boolean>, level: LogLevel
 const defaultLogLevel = process.env.NODE_ENV === 'test' ? 'silent' : 'info';
 export const [logLevel, logFilters] = parseEnv(process.env.LOG_LEVEL, defaultLogLevel);
 
+// If CONTRACT_LOG_LEVEL is set, add a filter for contract_log loggers.
+// Noir's debug_log() emits at 'debug' level, but pino's 'verbose' is counterintuitively LESS
+// verbose than 'debug'. Map verbose→debug so CONTRACT_LOG_LEVEL=verbose captures debug_log output.
+const contractLogLevelEnv = process.env['CONTRACT_LOG_LEVEL' satisfies EnvVar];
+if (contractLogLevelEnv) {
+  const sanitized = contractLogLevelEnv.trim().toLowerCase();
+  if (LogLevels.includes(sanitized as LogLevel)) {
+    const effectiveContractLevel = sanitized === 'verbose' ? ('debug' as LogLevel) : (sanitized as LogLevel);
+    logFilters.push(['contract_log', effectiveContractLevel]);
+  }
+}
+
+// The root pino logger level must be the most verbose across all configured levels.
+// Otherwise, the root level gates child loggers and prevents their output from reaching transports.
+// Each child logger explicitly defaults to `logLevel` when no filter matches (see createLogger).
+const effectiveRootLevel = logFilters.reduce((minLevel, [, filterLevel]) => {
+  return LogLevels.indexOf(filterLevel) > LogLevels.indexOf(minLevel) ? filterLevel : minLevel;
+}, logLevel);
+
 // Define custom logging levels for pino.
 const customLevels = { verbose: 25 };
 
@@ -125,7 +144,7 @@ const pinoOpts: pino.LoggerOptions<keyof typeof customLevels> = {
   customLevels,
   messageKey: 'msg',
   useOnlyCustomLevels: false,
-  level: logLevel,
+  level: effectiveRootLevel,
   redact: {
     paths: [
       ...redactedPaths,
@@ -211,12 +230,10 @@ function makeLogger() {
 
 export const logger = makeLogger();
 
-// Log the logger configuration.
-logger.verbose(
-  {
-    module: 'logger',
-    ...logFilters.reduce((accum, [module, level]) => ({ ...accum, [`log.${module}`]: level }), {}),
-  },
+// Log the logger configuration using a child at the configured logLevel (not the effective root level),
+// so this message only appears when logLevel itself is verbose enough.
+logger.child({ module: 'logger' }, { level: logLevel }).verbose(
+  logFilters.reduce((accum, [module, level]) => ({ ...accum, [`log.${module}`]: level }), {}),
   isNode
     ? `Logger initialized with level ${logLevel}` + (otlpEnabled ? ` with OTLP exporter to ${otlpEndpoint}` : '')
     : `Browser console logger initialized with level ${logLevel}`,
