@@ -142,9 +142,9 @@ mod test {
                 },
             );
 
-            let inner_nullifier = note.compute_nullifier_unconstrained(owner, note_hash_for_nullification);
+            let inner_nullifier_option = note.compute_nullifier_unconstrained(owner, note_hash_for_nullification);
 
-            Option::some(NoteHashAndNullifier { note_hash, inner_nullifier })
+            inner_nullifier_option.map(|inner_nullifier| NoteHashAndNullifier { note_hash, inner_nullifier })
         } else {
             Option::none()
         }
@@ -223,8 +223,9 @@ mod test {
             note_nonce,
             compute_siloed_note_hash(CONTRACT_ADDRESS, note_hash),
         );
-        let inner_nullifier =
-            note.compute_nullifier_unconstrained(OWNER, compute_note_hash_for_nullification(hinted_note));
+        let inner_nullifier = note
+            .compute_nullifier_unconstrained(OWNER, compute_note_hash_for_nullification(hinted_note))
+            .expect(f"Could not compute nullifier for note owned by {OWNER}");
 
         NoteAndData { note, note_nonce, note_hash, unique_note_hash, inner_nullifier }
     }

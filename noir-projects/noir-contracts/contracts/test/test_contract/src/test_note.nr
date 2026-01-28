@@ -33,19 +33,19 @@ impl NoteHash for TestNote {
         _context: &mut PrivateContext,
         _owner: AztecAddress,
         _note_hash_for_nullification: Field,
-    ) -> Field {
+    ) -> Option<Field> {
         // This note's nullifier is never used for any meaningful purpose so we don't care about having a real
         // implementation here.
-        0
+        Option::none()
     }
 
     unconstrained fn compute_nullifier_unconstrained(
         _self: Self,
         _owner: AztecAddress,
         _note_hash_for_nullification: Field,
-    ) -> Field {
+    ) -> Option<Field> {
         // This note's nullifier is never used for any meaningful purpose so we don't care about having a real
         // implementation here.
-        0
+        Option::none()
     }
 }

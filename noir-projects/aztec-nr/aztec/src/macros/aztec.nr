@@ -204,13 +204,10 @@ comptime fn generate_contract_library_method_compute_note_hash_and_nullifier() -
                             }
                         );
 
-                        let inner_nullifier = $compute_nullifier_unconstrained(note, owner, note_hash_for_nullification);
-
-                        Option::some(
-                            aztec::messages::discovery::NoteHashAndNullifier {
+                        $compute_nullifier_unconstrained(note, owner, note_hash_for_nullification)
+                            .map(|inner_nullifier| aztec::messages::discovery::NoteHashAndNullifier {
                                 note_hash, inner_nullifier
-                            }
-                        )
+                            })
                     }
                 },
             );

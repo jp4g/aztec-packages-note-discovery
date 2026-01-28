@@ -1,6 +1,6 @@
 use crate::{
     keys::constants::{NULLIFIER_INDEX, OUTGOING_INDEX},
-    oracle::{key_validation_request::get_key_validation_request, keys::get_public_keys_and_partial_address},
+    oracle::{key_validation_request::get_key_validation_request, keys::try_get_public_keys_and_partial_address},
 };
 use crate::protocol::{address::AztecAddress, public_keys::PublicKeys};
 
@@ -15,21 +15,31 @@ pub unconstrained fn get_ovsk_app(ovpk_m_hash: Field) -> Field {
     get_key_validation_request(ovpk_m_hash, OUTGOING_INDEX).sk_app
 }
 
-// Returns all public keys for a given account, applying proper constraints to the context. We read all keys at once
-// since the constraints for reading them all are actually fewer than if we read them one at a time - any read keys
-// that are not required by the caller can simply be discarded.
+// Returns all public keys for a given account, applying proper constraints to the context. We read all
+// keys at once since the constraints for reading them all are actually fewer than if we read them one at a time - any
+// read keys that are not required by the caller can simply be discarded.
+// Fails if the public keys are not registered
 pub fn get_public_keys(account: AztecAddress) -> PublicKeys {
-    // Safety: Public keys are constrained by showing their inclusion in the address's preimage.
-    let (public_keys, partial_address) = unsafe { get_public_keys_and_partial_address(account) };
-    assert_eq(account, AztecAddress::compute(public_keys, partial_address), "Invalid public keys hint for address");
+    try_get_public_keys(account).expect(f"Public keys not registered for account {account}")
+}
 
-    public_keys
+/// Like `get_public_keys`, but returns `None` if the public keys are not registered in the PXE.
+pub fn try_get_public_keys(account: AztecAddress) -> Option<PublicKeys> {
+    // Safety: Public keys are constrained by showing their inclusion in the address's preimage.
+    let result = unsafe { try_get_public_keys_and_partial_address(account) };
+    result.map(|(public_keys, partial_address)| {
+        assert_eq(
+            account,
+            AztecAddress::compute(public_keys, partial_address),
+            "Invalid public keys hint for address",
+        );
+        public_keys
+    })
 }
 
 mod test {
     use super::get_public_keys;
 
-    use crate::protocol::traits::Serialize;
     use crate::test::helpers::test_environment::TestEnvironment;
     use std::test::OracleMock;
 
@@ -63,8 +73,9 @@ mod test {
         // partial address
         random_keys_and_partial_address[12] = 0x236703e2cb00a182e024e98e9f759231b556d25ff19f98896cebb69e9e678cc9;
 
-        let _ = OracleMock::mock("utilityGetPublicKeysAndPartialAddress").returns(random_keys_and_partial_address
-            .serialize());
+        let _ = OracleMock::mock("utilityTryGetPublicKeysAndPartialAddress").returns(Option::some(
+            random_keys_and_partial_address,
+        ));
         let _ = get_public_keys(account);
     }
 }

@@ -70,7 +70,10 @@ where
     Note: NoteHash,
 {
     let note_hash_for_nullification = compute_confirmed_note_hash_for_nullification(confirmed_note);
-    let nullifier = confirmed_note.note.compute_nullifier(context, confirmed_note.owner, note_hash_for_nullification);
+    let owner = confirmed_note.owner;
+    let nullifier = confirmed_note.note.compute_nullifier(context, owner, note_hash_for_nullification).expect(
+        f"Could not compute nullifier for note owned by {owner}",
+    );
 
     let note_hash = if confirmed_note.metadata.is_settled() {
         // Counter is zero, so we're nullifying a settled note and we don't populate the note_hash with real value.

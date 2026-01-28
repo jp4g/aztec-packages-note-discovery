@@ -46,18 +46,18 @@ impl NoteHash for TransparentNote {
         _context: &mut PrivateContext,
         _owner: AztecAddress,
         note_hash_for_nullification: Field,
-    ) -> Field {
-        poseidon2_hash_with_separator(
+    ) -> Option<Field> {
+        Option::some(poseidon2_hash_with_separator(
             [note_hash_for_nullification],
             DOM_SEP__NOTE_NULLIFIER as Field,
-        )
+        ))
     }
 
     unconstrained fn compute_nullifier_unconstrained(
         self,
         owner: AztecAddress,
         note_hash_for_nullification: Field,
-    ) -> Field {
+    ) -> Option<Field> {
         // compute_nullifier ignores context so we can reuse it here
         self.compute_nullifier(zeroed(), owner, note_hash_for_nullification)
     }

@@ -59,11 +59,11 @@ pub contract Claim {
         // TODO(#7775): manually computing the hash and passing it to compute_nullifier func is not great as note could
         // handle it on its own or we could make assert_note_existed_by return note_hash_for_nullification.
         let note_hash_for_nullification = compute_note_hash_for_nullification(hinted_note);
-        let nullifier = hinted_note.note.compute_nullifier(
-            self.context,
-            hinted_note.owner,
-            note_hash_for_nullification,
-        );
+        let owner = hinted_note.owner;
+        let nullifier = hinted_note
+            .note
+            .compute_nullifier(self.context, owner, note_hash_for_nullification)
+            .expect(f"Could not compute nullifier for note owned by {owner}");
         self.context.push_nullifier(nullifier);
 
         // 5) Finally we mint the reward token to the sender of the transaction

@@ -62,28 +62,28 @@ impl NoteHash for NFTNote {
         context: &mut PrivateContext,
         owner: AztecAddress,
         note_hash_for_nullification: Field,
-    ) -> Field {
+    ) -> Option<Field> {
         let owner_npk_m = get_public_keys(owner).npk_m;
         let owner_npk_m_hash = owner_npk_m.hash();
         let secret = context.request_nsk_app(owner_npk_m_hash);
-        poseidon2_hash_with_separator(
+        Option::some(poseidon2_hash_with_separator(
             [note_hash_for_nullification, secret],
             DOM_SEP__NOTE_NULLIFIER,
-        )
+        ))
     }
 
     unconstrained fn compute_nullifier_unconstrained(
         self,
         owner: AztecAddress,
         note_hash_for_nullification: Field,
-    ) -> Field {
+    ) -> Option<Field> {
         let owner_npk_m = get_public_keys(owner).npk_m;
         let owner_npk_m_hash = owner_npk_m.hash();
         let secret = get_nsk_app(owner_npk_m_hash);
-        poseidon2_hash_with_separator(
+        Option::some(poseidon2_hash_with_separator(
             [note_hash_for_nullification, secret],
             DOM_SEP__NOTE_NULLIFIER,
-        )
+        ))
     }
 }
 

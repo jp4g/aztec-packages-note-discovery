@@ -35,12 +35,14 @@ impl NoteHash for MockNote {
         _context: &mut PrivateContext,
         _owner: AztecAddress,
         note_hash_for_nullification: Field,
-    ) -> Field {
-        // We don't use any kind of secret here since this is only a mock note and having it here would make tests more
-        // cumbersome
-        poseidon2_hash_with_separator(
-            [note_hash_for_nullification],
-            DOM_SEP__NOTE_NULLIFIER as Field,
+    ) -> Option<Field> {
+        // We don't use any kind of secret here since this is only a mock note and having it here would make tests
+        // more cumbersome
+        Option::some(
+            poseidon2_hash_with_separator(
+                [note_hash_for_nullification],
+                DOM_SEP__NOTE_NULLIFIER as Field,
+            ),
         )
     }
 
@@ -48,12 +50,14 @@ impl NoteHash for MockNote {
         self,
         _owner: AztecAddress,
         note_hash_for_nullification: Field,
-    ) -> Field {
-        // We don't use any kind of secret here since this is only a mock note and having it here would make tests more
-        // cumbersome
-        poseidon2_hash_with_separator(
-            [note_hash_for_nullification],
-            DOM_SEP__NOTE_NULLIFIER as Field,
+    ) -> Option<Field> {
+        // We don't use any kind of secret here since this is only a mock note and having it here would make tests
+        // more cumbersome
+        Option::some(
+            poseidon2_hash_with_separator(
+                [note_hash_for_nullification],
+                DOM_SEP__NOTE_NULLIFIER as Field,
+            ),
         )
     }
 }

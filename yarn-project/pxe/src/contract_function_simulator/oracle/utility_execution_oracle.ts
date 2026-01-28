@@ -178,15 +178,18 @@ export class UtilityExecutionOracle implements IMiscOracle, IUtilityExecutionOra
   /**
    * Retrieve the complete address associated to a given address.
    * @param account - The account address.
-   * @returns A complete address associated with the input address.
-   * @throws An error if the account is not registered in the database.
+   * @returns A complete address associated with the input address, or `undefined` if not registered.
    */
-  public utilityGetPublicKeysAndPartialAddress(account: AztecAddress): Promise<CompleteAddress> {
+  public utilityTryGetPublicKeysAndPartialAddress(account: AztecAddress): Promise<CompleteAddress | undefined> {
     return this.getCompleteAddress(account);
   }
 
-  protected async getCompleteAddress(account: AztecAddress): Promise<CompleteAddress> {
-    const completeAddress = await this.addressStore.getCompleteAddress(account);
+  private getCompleteAddress(account: AztecAddress): Promise<CompleteAddress | undefined> {
+    return this.addressStore.getCompleteAddress(account);
+  }
+
+  protected async getCompleteAddressOrFail(account: AztecAddress): Promise<CompleteAddress> {
+    const completeAddress = await this.getCompleteAddress(account);
     if (!completeAddress) {
       throw new Error(
         `No public key registered for address ${account}.
@@ -540,7 +543,7 @@ export class UtilityExecutionOracle implements IMiscOracle, IUtilityExecutionOra
 
   protected async getSharedSecret(address: AztecAddress, ephPk: Point): Promise<Point> {
     // TODO(#12656): return an app-siloed secret
-    const recipientCompleteAddress = await this.getCompleteAddress(address);
+    const recipientCompleteAddress = await this.getCompleteAddressOrFail(address);
     const ivskM = await this.keyStore.getMasterSecretKey(
       recipientCompleteAddress.publicKeys.masterIncomingViewingPublicKey,
     );

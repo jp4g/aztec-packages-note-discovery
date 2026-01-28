@@ -64,8 +64,10 @@ where
     Note: NoteHash,
 {
     let note_hash_for_nullification = compute_confirmed_note_hash_for_nullification(confirmed_note);
-    let inner_nullifier =
-        confirmed_note.note.compute_nullifier(context, confirmed_note.owner, note_hash_for_nullification);
+    let owner = confirmed_note.owner;
+    let inner_nullifier = confirmed_note.note.compute_nullifier(context, owner, note_hash_for_nullification).expect(
+        f"Could not compute nullifier for note owned by {owner}",
+    );
 
     let siloed_nullifier = compute_siloed_nullifier(confirmed_note.contract_address, inner_nullifier);
 
@@ -82,8 +84,10 @@ where
 {
     let note_hash_for_nullification = compute_confirmed_note_hash_for_nullification(confirmed_note);
 
-    let inner_nullifier =
-        confirmed_note.note.compute_nullifier(context, confirmed_note.owner, note_hash_for_nullification);
+    let owner = confirmed_note.owner;
+    let inner_nullifier = confirmed_note.note.compute_nullifier(context, owner, note_hash_for_nullification).expect(
+        f"Could not compute nullifier for note owned by {owner}",
+    );
 
     let siloed_nullifier = compute_siloed_nullifier(confirmed_note.contract_address, inner_nullifier);
 

@@ -738,9 +738,9 @@ impl TestEnvironment {
                 },
             );
 
-            let inner_nullifier = note.compute_nullifier_unconstrained(owner, note_hash_for_nullification);
+            let inner_nullifier_option = note.compute_nullifier_unconstrained(owner, note_hash_for_nullification);
 
-            Option::some(NoteHashAndNullifier { note_hash, inner_nullifier })
+            inner_nullifier_option.map(|inner_nullifier| NoteHashAndNullifier { note_hash, inner_nullifier })
         };
 
         self.discover_data_in_message_plaintext(
