@@ -21,7 +21,7 @@ Here's a common layout for a basic Aztec.nr Contract project:
 
 See the vanilla Noir docs for [more info on packages](https://noir-lang.org/docs/noir/modules_packages_crates/crates_and_packages).
 
-## contract block
+## Contract block
 
 All contracts start with importing the required files and declaring a contract using the `contract` keyword:
 
