@@ -29,22 +29,9 @@ This guide walks you through paying transaction fees on Aztec using various paym
 | Public FPC          | Pay with tokens publicly      | Public  | Token balance, FPC address |
 | Bridge + Claim      | Bootstrap from L1             | Public  | L1 ETH for gas             |
 
-## What is mana?
+## Mana and Fee Juice
 
-Mana is Aztec's unit of computational effort, equivalent to gas on Ethereum. Every transaction consumes mana based on the operations it performs.
-
-Mana has two dimensions:
-
-- **DA (Data Availability) mana**: Cost of publishing transaction data to the data availability layer
-- **L2 mana**: Cost of executing the transaction on the Aztec network
-
-The total transaction fee is calculated as:
-
-```
-fee = (daGas × feePerDaGas) + (l2Gas × feePerL2Gas)
-```
-
-For more details on fee mechanics, see [Fee Concepts](../foundational-topics/fees.md).
+Mana is Aztec's unit of computational effort (like gas on Ethereum), and Fee Juice is the native fee token used to pay for transactions. For a detailed explanation of these concepts, see [Fee Concepts](../foundational-topics/fees.md).
 
 ## Estimate mana costs
 
@@ -71,6 +58,8 @@ The `estimatedGas` object contains:
 To calculate the expected fee from estimated gas, use the `computeFee` method with current network fees:
 
 ```typescript
+// import { createAztecNodeClient } from '@aztec/aztec.js/node';
+// const aztecNode = createAztecNodeClient('http://localhost:8080');
 const currentFees = await aztecNode.getCurrentMinFees();
 const estimatedFee = estimatedGas.gasLimits.computeFee(currentFees).toBigInt();
 console.log("Estimated fee:", estimatedFee);
@@ -93,7 +82,7 @@ const receipt = await contract.methods
 console.log("Transaction fee:", receipt.transactionFee);
 ```
 
-The `transactionFee` field is a `bigint` representing the fee in mana. You can also check execution status:
+The `transactionFee` field is a `bigint` representing the total fee paid in the fee token (Fee Juice). You can also check execution status:
 
 ```typescript
 if (receipt.hasExecutionSucceeded()) {
