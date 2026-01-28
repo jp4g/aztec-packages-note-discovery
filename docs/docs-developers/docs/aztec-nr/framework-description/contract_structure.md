@@ -63,7 +63,7 @@ pub contract MyContract {
 With the boilerplate out of the way, it is now the time to begin defining the contract logic. It is recommended to start development by understanding the shape the _state_ of the contract will have:
 - Which values will be private?
 - Which will be public?
-- What properties are required (is mutability or immutability needed? is there a single global value, like a token total supply, or does each user get one, like a balance?).
+- What properties are required (is mutability or immutability needed? Is there a single global value, like a token total supply, or does each user get one, like a balance?).
 
 In Solidity, this is done by simply declaring variables inside of the contract, like so:
 
@@ -73,7 +73,7 @@ contract MyContract {
 }
 ```
 
-In Aztec this process is a bit more involved, as not only are there both private and public variables (where now these keywords refer to the privacy of the variable rather than their accessibility), there are multiple _kinds_ of state variables.
+In Aztec, defining state requires a few more steps, as there are both private and public variables (where these keywords refer to the privacy of the variable rather than their accessibility), and multiple _kinds_ of state variables.
 
 We define state using a [`struct`](https://noir-lang.org/docs/noir/concepts/data_types/structs) that will hold the entire contract state. We call this struct _the storage struct_, and each variable inside this struct is called [_a state variable_.](./state_variables)
 
@@ -87,21 +87,21 @@ pub contract MyContract {
         state_vars::{PrivateMutable, PublicMutable}
     };
 
-    // the storage struct can have any name, but it is typically just called `Storage`. it must have the `#[storage]` macro applied to it.
-    // this struct must also have a generic type called C or Context. for now try to pretend it is not there
+    // The storage struct can have any name, but is typically called `Storage`. It must have the `#[storage]` macro applied to it.
+    // This struct must also have a generic type called C or Context.
     #[storage]
     struct Storage<Context> {
-        // a private numeric value which can change over time. this value will be hidden, and only people who are shown the secret will be able to know its current value
-        my_private_state_variable: PrivateMutable<u128, C>,
-        // a public numeric value which can change over time. this value will be known to everyone. this is equivalent to the solidity example above
-        my_public_state_variable: PublicMutable<u128, C>,
+        // A private numeric value which can change over time. This value will be hidden, and only those with the secret can know its current value.
+        my_private_state_variable: Owned<PrivateMutable<NoteType, Context>>,
+        // A public numeric value which can change over time. This value will be known to everyone and is equivalent to the Solidity example above.
+        my_public_state_variable: Owned<PublicMutable<NoteType, Context>>,
     }
 }
 ```
 
 ## Events
 
-As in Solidity, Aztec contracts can define events to notify that some state has changed. However, in Aztec, events can also be emitted privately, in which case, only some users will learn of the event.
+Like Solidity contracts, Aztec contracts can define events to notify that some state has changed. However, in Aztec, events can also be emitted privately, in which case only some users will learn of the event.
 
 Events are a struct marked with the `#[event]` macro:
 
@@ -119,7 +119,7 @@ struct Transfer {
 Contracts are interacted with by invoking their `external` functions. There are three kinds of `external` functions:
 
 - External **private** functions, which reveal nothing about their execution and are executed off chain on the user's device, producing a zero-knowledge proof of execution that is sent to the network as part of a transaction.
-- External **public** functions, which are invoked publicly by nodes in the network (like any `external` Solidity contract function).
+- External **public** functions, which nodes in the network invoke publicly (like any `external` Solidity contract function).
 - External **utility** functions, which are executed off chain on the user's device by applications in order to display useful information, e.g. retrieve contract state. These are never part of a transaction.
 
 ```rust
@@ -146,13 +146,13 @@ contract MyContract {
 }
 ```
 
-Additionally, contracts can also define `internal` functions, which cannot be called by other contracts (like any `internal` Solidity function). These exist to help organize the user's code, reuse functionality, etc.
+Contracts can also define `internal` functions, which cannot be called by other contracts (like any `internal` Solidity function). These exist to help organize your code, reuse functionality, etc.
 
 ### Current Limitations
 
 All `#[external]` contract functions must be defined _directly inside the `contract` block_, that is, in the same file. It is possible to define `#[internal]` and helper functions in `mod`s in other files, but not `#[external]` functions.
 
-Additionally, **Noir does not feature inheritance** nor is there currently any other mechanism to extend and reuse contract logic. e.g. it is not possible to take a token contract and extend it to add minting functionality, or to reuse it in a liquidity pool. Like in Vyper, the entire logic must live in a single file.
+**Noir does not feature inheritance** nor is there currently any other mechanism to extend and reuse contract logic. For example, you cannot take a token contract and extend it to add minting functionality, or reuse it in a liquidity pool. Like Vyper, the entire logic must live in a single file.
 
 We expect to lift some of these restrictions sometime after the release of Noir 1.0.
 

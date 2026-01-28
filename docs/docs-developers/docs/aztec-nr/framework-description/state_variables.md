@@ -72,7 +72,7 @@ Consider, for example, a `PublicMutable` state variable, which is a value that i
 ```rust
 #[storage]
 struct Storage<Context> {
-    my_public_variable: PublicMutable<u128, Context>,
+    my_public_variable: PublicMutable<NoteType, Context>,
 }
 
 #[external("public")]
@@ -106,7 +106,7 @@ Below is a table comparing the key properties of the different public state vari
 
 | State variable         | Mutable?            | Readable in private? | Writable in private? | Example use case                                                                   |
 | ---------------------- | ------------------- | -------------------- | -------------------- | ---------------------------------------------------------------------------------- |
-| `PublicMutable`        | yes                 | no                   | no                   | Configuration of admins, global state (e.g. token total supply, total votes)       |
+| `PublicMutable`        | yes                 | no                   | no                   | Configuration of admins, global state (e.g. token total supply, total votes) |
 | `PublicImmutable`      | no                  | yes                  | no                   | Fixed configuration, one-way actions (e.g. initialization settings for a proposal) |
 | `DelayedPublicMutable` | yes (after a delay) | yes                  | no                   | Non time sensitive system configuration                                            |
 
@@ -140,7 +140,7 @@ The `write` method on `PublicMutable` variables takes the value to write as an i
 
 `PublicImmutable` is a simplified version of `PublicMutable`: it's a public state variable that can only be written (initialized) once, at which point it can only be read. Unlike Solidity `immutable` state variables, which must be set in the contract's constructor, a `PublicImmutable` can be initialized _at any point in time_ during the contract's lifecycle. Attempts to read it prior to initialization will revert.
 
-Due to the value being immutable, you can also read it during private execution - once a circuit proves that the value was set in the past, it knows it cannot have possibly changed. This makes this state variable suitable for immutable public contract configuration or one-off public actions, such as whether a user has signed up.
+Due to the value being immutable, you can also read it during private execution - once a circuit proves that the value was set in the past, it knows it cannot have possibly changed. This makes this state variable suitable for immutable public contract configuration or one-off public actions, such as user registration status.
 
 #### Declaration
 
