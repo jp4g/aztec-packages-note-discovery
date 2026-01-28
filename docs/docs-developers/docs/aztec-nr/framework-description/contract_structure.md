@@ -81,7 +81,7 @@ We define state using a [`struct`](https://noir-lang.org/docs/noir/concepts/data
 use aztec::macros::aztec;
 
 #[aztec]
-contract MyContract {
+pub contract MyContract {
     use aztec::{
         macros::storage,
         state_vars::{PrivateMutable, PublicMutable}
