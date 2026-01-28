@@ -18,9 +18,11 @@ import { withLogNameSuffix } from '@aztec/foundation/log';
 import { retryUntil } from '@aztec/foundation/retry';
 import { sleep } from '@aztec/foundation/sleep';
 import { SpamContract } from '@aztec/noir-test-contracts.js/Spam';
+import { TestContract } from '@aztec/noir-test-contracts.js/Test';
 import { getMockPubSubP2PServiceFactory } from '@aztec/p2p/test-helpers';
 import { ProverNode, type ProverNodeConfig, ProverNodePublisher } from '@aztec/prover-node';
 import type { TestProverNode } from '@aztec/prover-node/test';
+import type { PXEConfig } from '@aztec/pxe/config';
 import {
   type SequencerClient,
   type SequencerEvents,
@@ -49,7 +51,7 @@ export const WORLD_STATE_BLOCK_CHECK_INTERVAL = 50;
 export const ARCHIVER_POLL_INTERVAL = 50;
 export const DEFAULT_L1_BLOCK_TIME = process.env.CI ? 12 : 8;
 
-export type EpochsTestOpts = Partial<SetupOptions> & { numberOfAccounts?: number };
+export type EpochsTestOpts = Partial<SetupOptions> & { numberOfAccounts?: number; pxeOpts?: Partial<PXEConfig> };
 
 export type TrackedSequencerEvent = {
   [K in keyof SequencerEvents]: Parameters<SequencerEvents[K]>[0] & {
@@ -121,30 +123,36 @@ export class EpochsTestContext {
 
     // Set up system without any account nor protocol contracts
     // and with faster block times and shorter epochs.
-    const context = await setup(opts.numberOfAccounts ?? 0, {
-      automineL1Setup: true,
-      checkIntervalMs: 50,
-      archiverPollingIntervalMS: ARCHIVER_POLL_INTERVAL,
-      worldStateBlockCheckIntervalMS: WORLD_STATE_BLOCK_CHECK_INTERVAL,
-      aztecEpochDuration,
-      aztecSlotDuration,
-      ethereumSlotDuration,
-      aztecProofSubmissionEpochs,
-      aztecTargetCommitteeSize: opts.initialValidators?.length ?? 0,
-      minTxsPerBlock: 0,
-      realProofs: false,
-      startProverNode: true,
-      proverTestDelayMs: opts.proverTestDelayMs ?? 0,
-      // We use numeric incremental prover ids for simplicity, but we can switch to
-      // using the prover's eth address if the proverId is used for something in the rollup contract
-      // Use numeric EthAddress for deterministic prover id
-      proverId: EthAddress.fromNumber(1),
-      worldStateBlockHistory: WORLD_STATE_BLOCK_HISTORY,
-      exitDelaySeconds: DefaultL1ContractsConfig.exitDelaySeconds,
-      slasherFlavor: 'none',
-      l1PublishingTime,
-      ...opts,
-    });
+    const context = await setup(
+      opts.numberOfAccounts ?? 0,
+      {
+        automineL1Setup: true,
+        checkIntervalMs: 50,
+        archiverPollingIntervalMS: ARCHIVER_POLL_INTERVAL,
+        worldStateBlockCheckIntervalMS: WORLD_STATE_BLOCK_CHECK_INTERVAL,
+        aztecEpochDuration,
+        aztecSlotDuration,
+        ethereumSlotDuration,
+        aztecProofSubmissionEpochs,
+        aztecTargetCommitteeSize: opts.initialValidators?.length ?? 0,
+        minTxsPerBlock: 0,
+        realProofs: false,
+        startProverNode: true,
+        proverTestDelayMs: opts.proverTestDelayMs ?? 0,
+        // We use numeric incremental prover ids for simplicity, but we can switch to
+        // using the prover's eth address if the proverId is used for something in the rollup contract
+        // Use numeric EthAddress for deterministic prover id
+        proverId: EthAddress.fromNumber(1),
+        worldStateBlockHistory: WORLD_STATE_BLOCK_HISTORY,
+        exitDelaySeconds: DefaultL1ContractsConfig.exitDelaySeconds,
+        slasherFlavor: 'none',
+        l1PublishingTime,
+        ...opts,
+      },
+      // Use checkpointed chain tip for PXE by default to avoid issues with blocks being dropped due to pruned anchor blocks.
+      // Can be overridden via opts.pxeOpts.
+      { syncChainTip: 'checkpointed', ...opts.pxeOpts },
+    );
 
     this.context = context;
     this.proverNodes = context.proverNode ? [context.proverNode] : [];
@@ -368,6 +376,19 @@ export class EpochsTestContext {
     });
     await wallet.registerContract(instance, SpamContract.artifact);
     return SpamContract.at(instance.address, wallet);
+  }
+
+  /** Registers the TestContract on the given wallet. */
+  public async registerTestContract(wallet: Wallet, salt = Fr.ZERO) {
+    const instance = await getContractInstanceFromInstantiationParams(TestContract.artifact, {
+      constructorArgs: [],
+      constructorArtifact: undefined,
+      salt,
+      publicKeys: undefined,
+      deployer: undefined,
+    });
+    await wallet.registerContract(instance, TestContract.artifact);
+    return TestContract.at(instance.address, wallet);
   }
 
   /** Creates an L1 client using a fresh account with funds from anvil, with a tx delayer already set up. */

@@ -20,6 +20,10 @@ export {
   waitForResourceByName,
   waitForResourcesByName,
   getChartDir,
+  type ServiceEndpoint,
+  getServiceEndpoint,
+  getRPCEndpoint,
+  getEthereumEndpoint,
 } from './k8s.js';
 
 // Chaos Mesh
@@ -53,3 +57,6 @@ export {
 
 // Client utilities
 export { getPublicViemClient, getL1DeploymentAddresses, getNodeClient } from './clients.js';
+
+// Health checks
+export { ChainHealth, type ChainHealthSnapshot } from './health.js';

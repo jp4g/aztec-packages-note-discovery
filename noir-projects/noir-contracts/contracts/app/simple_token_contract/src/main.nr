@@ -20,10 +20,10 @@ pub contract SimpleToken {
         },
         messages::message_delivery::MessageDelivery,
         protocol_types::address::AztecAddress,
-        state_vars::{Map, Owned, PublicImmutable, PublicMutable, state_variable::StateVariable},
+        state_vars::{Map, Owned, PublicImmutable, PublicMutable, StateVariable},
     };
 
-    use uint_note::uint_note::{PartialUintNote, UintNote};
+    use uint_note::{PartialUintNote, UintNote};
 
     use balance_set::BalanceSet;
 
