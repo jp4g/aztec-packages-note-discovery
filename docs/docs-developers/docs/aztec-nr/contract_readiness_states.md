@@ -19,6 +19,58 @@ Unlike Ethereum where deployment is binary (deployed or not), Aztec contracts ha
 
 Not every contract needs every state. A private-only contract can skip class registration and public deployment entirely.
 
+## Quick Start: What Do I Need to Do?
+
+Use this decision tree to determine which steps your contract needs.
+
+```mermaid
+flowchart TD
+    Start([I want to call a function on my contract]) --> HasPublic{Does your contract<br/>have public functions?}
+
+    HasPublic -->|Yes| WantPublic{Do you want to call<br/>a public function?}
+    HasPublic -->|No| PrivateOnly[No class registration or<br/>public deployment needed!]
+
+    WantPublic -->|Yes| InstanceDeployed{Is the instance<br/>publicly deployed?}
+    WantPublic -->|No| WantPrivate{Do you want to call<br/>a private function?}
+
+    InstanceDeployed -->|Yes| CheckInit1{Is the contract<br/>initialized?}
+    InstanceDeployed -->|No| ClassRegistered{Is the class<br/>registered?}
+
+    ClassRegistered -->|Yes| NeedInstance[Register the instance via<br/>ContractInstanceRegistry]
+    ClassRegistered -->|No| NeedClass[Register the class via<br/>ContractClassRegistry first]
+    NeedClass --> NeedInstance
+    NeedInstance --> CheckInit1
+
+    WantPrivate -->|Yes| CheckInit2{Is the contract<br/>initialized?}
+
+    PrivateOnly --> CheckInit3{Is the contract<br/>initialized?}
+
+    CheckInit1 -->|Yes| ReadyPublic([Ready to call public functions])
+    CheckInit1 -->|No| HasInitializer1{"Does your function have<br/>noinitcheck?"}
+
+    CheckInit2 -->|Yes| ReadyPrivate([Ready to call private functions])
+    CheckInit2 -->|No| HasInitializer2{"Does your function have<br/>noinitcheck?"}
+
+    CheckInit3 -->|Yes| ReadyPrivate2([Ready to call private functions])
+    CheckInit3 -->|No| HasInitializer3{"Does your function have<br/>noinitcheck?"}
+
+    HasInitializer1 -->|Yes| ReadyNoInit1([Call it! No init check needed])
+    HasInitializer1 -->|No| MustInit1[Must be initialized]
+    MustInit1 --> ReadyPublic
+
+    HasInitializer2 -->|Yes| ReadyNoInit2([Call it! No init check needed])
+    HasInitializer2 -->|No| MustInit2[Must be initialized]
+    MustInit2 --> ReadyPrivate
+
+    HasInitializer3 -->|Yes| ReadyNoInit3([Call it! No init check needed])
+    HasInitializer3 -->|No| MustInit3[Must be initialized]
+    MustInit3 --> ReadyPrivate2
+```
+
+:::tip No initializer?
+If your contract has no `#[initializer]` function and was deployed with `without_initializer()`, it's considered initialized immediately. Skip the initialization checks above.
+:::
+
 ## The Contract Lifecycle States
 
 ### State 1: Contract Class Registration
