@@ -22,7 +22,7 @@ It allows safe and easy implementation of well understood design patterns, such 
 - Dangerous actions should be easy to spot. e.g. ignoring return values or calling functions with the `_unsafe` prefix.
 - This is achieved by having rails that intentionally trigger a developer's "WTF?" response, to ensure they understand what they're doing.
 
-A good example of this is writing to private state variables. These functions return a `NoteMessagePendingDelivery` struct, which results in a compiler error unless used. This is because writing to private state also requires sending an encrypted message with the new state to the people that need to access it - otherwise, because it is private, they will not even know the state changed.
+A good example of this is writing to private state variables. These functions return a `NoteMessage` struct, which results in a compiler error unless used. This is because writing to private state also requires sending an encrypted message with the new state to the people that need to access it - otherwise, because it is private, they will not even know the state changed.
 
 ```
 storage.votes.insert(new_vote); // compiler error - unused NoteMessagePendingDelivery return value
