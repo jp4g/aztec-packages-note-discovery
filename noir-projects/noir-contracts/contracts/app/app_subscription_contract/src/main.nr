@@ -139,8 +139,6 @@ pub contract AppSubscription {
     ) {
         assert(tx_count <= SUBSCRIPTION_TXS);
 
-        let x: Field = 1;
-        let y = x.pack();
         let config: Config = self.storage.config.read();
 
         self.call(Token::at(config.subscription_token_address).transfer_in_private(

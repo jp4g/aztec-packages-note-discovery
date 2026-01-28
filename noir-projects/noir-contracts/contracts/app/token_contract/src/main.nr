@@ -194,7 +194,6 @@ pub contract Token {
         amount: u128,
         authwit_nonce: Field,
     ) {
-        let ss = self.storage.balances.get_storage_slot();
         self.storage.balances.at(from).sub(amount).deliver(MessageDelivery.ONCHAIN_CONSTRAINED);
         self.enqueue_self._increase_public_balance(to, amount);
     }

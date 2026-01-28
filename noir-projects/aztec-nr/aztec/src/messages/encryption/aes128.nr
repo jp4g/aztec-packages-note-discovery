@@ -425,20 +425,13 @@ mod test {
     use crate::{
         keys::ecdh_shared_secret::derive_ecdh_shared_secret,
         messages::{
-            encoding::MESSAGE_PLAINTEXT_LEN,
-            encryption::{
-                message_encryption::MessageEncryption,
-                poseidon2::{poseidon2_decrypt, poseidon2_encrypt},
-            },
+            encoding::MESSAGE_PLAINTEXT_LEN, encryption::message_encryption::MessageEncryption,
         },
         test::helpers::test_environment::TestEnvironment,
     };
     use super::{AES128, random_address_point};
     use protocol_types::{address::AztecAddress, traits::FromField};
-    use std::{
-        embedded_curve_ops::{EmbeddedCurveScalar, fixed_base_scalar_mul, multi_scalar_mul},
-        test::OracleMock,
-    };
+    use std::{embedded_curve_ops::EmbeddedCurveScalar, test::OracleMock};
 
     #[test]
     unconstrained fn encrypt_decrypt_deterministic() {
