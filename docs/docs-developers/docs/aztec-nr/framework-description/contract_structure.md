@@ -90,7 +90,7 @@ contract MyContract {
     // the storage struct can have any name, but it is typically just called `Storage`. it must have the `#[storage]` macro applied to it.
     // this struct must also have a generic type called C or Context. for now try to pretend it is not there
     #[storage]
-    struct Storage<C> {
+    struct Storage<Context> {
         // a private numeric value which can change over time. this value will be hidden, and only people who are shown the secret will be able to know its current value
         my_private_state_variable: PrivateMutable<u128, C>,
         // a public numeric value which can change over time. this value will be known to everyone. this is equivalent to the solidity example above
