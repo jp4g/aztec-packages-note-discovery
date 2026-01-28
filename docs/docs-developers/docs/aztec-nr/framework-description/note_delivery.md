@@ -111,7 +111,7 @@ Ask yourself: **"Is the sender incentivized to deliver this note correctly?"**
 
 ## Note Discovery and the Sender
 
-When a note is delivered, recipients need to discover it among all the encrypted logs on the network. Aztec uses a **tagging system** that requires computing a shared secret between the sender and recipient.
+When a note is delivered, recipients need to discover it among all the encrypted logs on the network. Aztec.nr uses a **tagging system** that requires computing a shared secret between the sender and recipient.
 
 ### Who is the "Sender"?
 
