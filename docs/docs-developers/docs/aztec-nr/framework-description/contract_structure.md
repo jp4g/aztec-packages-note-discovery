@@ -50,7 +50,7 @@ Aside from the `#[aztec]` macro import, all other imports need to go _inside_ th
 use aztec::macros::aztec;
 
 #[aztec]
-contract MyContract {
+pub contract MyContract {
     // other imports go here
     use aztec::state_vars::{PrivateMutable, PrivateSet};
 }
