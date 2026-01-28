@@ -165,7 +165,7 @@ container_script=$(
     mem_pid=\$!
 
     # Dump process tree every 10s.
-    bash -c "while true; do pstree -ag; echo; echo; sleep 10; done" 2>&1 > >(add_timestamps | cache_log processes) &
+    bash -c "while true; do pstree -agl; echo; echo; sleep 10; done" 2>&1 > >(add_timestamps | cache_log processes) &
     pstree_pid=\$!
 
     set +e
@@ -188,7 +188,7 @@ container_script=$(
   case \$code in
     155) ;;
     0) log_ci_run PASSED \$ci_log_id ;;
-    *) log_ci_run FAILED \$ci_log_id && merge_train_failure_slack_notify \$ci_log_id ;;
+    *) log_ci_run FAILED \$ci_log_id && merge_train_failure_slack_notify \$ci_log_id && release_canary_slack_notify \$ci_log_id ;;
   esac
   exit \$code
 EOF
@@ -316,6 +316,7 @@ function run {
         -e SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-} \
         -e AWS_TOKEN=\$aws_token \
         -e NAMESPACE=${NAMESPACE:-} \
+        -e NETWORK=${NETWORK:-} \
         --pids-limit=32768 \
         --shm-size=2g \
         aztecprotocol/devbox:3.0 bash -c $(printf '%q' "$container_script")

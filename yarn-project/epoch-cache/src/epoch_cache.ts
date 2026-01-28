@@ -36,16 +36,11 @@ export type SlotTag = 'now' | 'next' | SlotNumber;
 
 export interface EpochCacheInterface {
   getCommittee(slot: SlotTag | undefined): Promise<EpochCommitteeInfo>;
-  getEpochAndSlotNow(): EpochAndSlot;
+  getEpochAndSlotNow(): EpochAndSlot & { nowMs: bigint };
   getEpochAndSlotInNextL1Slot(): EpochAndSlot & { now: bigint };
   getProposerIndexEncoding(epoch: EpochNumber, slot: SlotNumber, seed: bigint): `0x${string}`;
   computeProposerIndex(slot: SlotNumber, epoch: EpochNumber, seed: bigint, size: bigint): bigint;
-  getProposerAttesterAddressInCurrentOrNextSlot(): Promise<{
-    currentProposer: EthAddress | undefined;
-    nextProposer: EthAddress | undefined;
-    currentSlot: SlotNumber;
-    nextSlot: SlotNumber;
-  }>;
+  getCurrentAndNextSlot(): { currentSlot: SlotNumber; nextSlot: SlotNumber };
   getProposerAttesterAddressInSlot(slot: SlotNumber): Promise<EthAddress | undefined>;
   getRegisteredValidators(): Promise<EthAddress[]>;
   isInCommittee(slot: SlotTag, validator: EthAddress): Promise<boolean>;
@@ -139,9 +134,10 @@ export class EpochCache implements EpochCacheInterface {
     return this.l1constants;
   }
 
-  public getEpochAndSlotNow(): EpochAndSlot & { now: bigint } {
-    const now = this.nowInSeconds();
-    return { ...this.getEpochAndSlotAtTimestamp(now), now };
+  public getEpochAndSlotNow(): EpochAndSlot & { nowMs: bigint } {
+    const nowMs = BigInt(this.dateProvider.now());
+    const nowSeconds = nowMs / 1000n;
+    return { ...this.getEpochAndSlotAtTimestamp(nowSeconds), nowMs };
   }
 
   public nowInSeconds(): bigint {
@@ -283,24 +279,12 @@ export class EpochCache implements EpochCacheInterface {
     return BigInt(keccak256(this.getProposerIndexEncoding(epoch, slot, seed))) % size;
   }
 
-  /**
-   * Returns the current and next proposer's attester address
-   *
-   * We return the next proposer's attester address as the node will check if it is the proposer at the next ethereum block,
-   * which can be the next slot. If this is the case, then it will send proposals early.
-   */
-  public async getProposerAttesterAddressInCurrentOrNextSlot(): Promise<{
-    currentSlot: SlotNumber;
-    nextSlot: SlotNumber;
-    currentProposer: EthAddress | undefined;
-    nextProposer: EthAddress | undefined;
-  }> {
+  /** Returns the current and next L2 slot numbers. */
+  public getCurrentAndNextSlot(): { currentSlot: SlotNumber; nextSlot: SlotNumber } {
     const current = this.getEpochAndSlotNow();
     const next = this.getEpochAndSlotInNextL1Slot();
 
     return {
-      currentProposer: await this.getProposerAttesterAddressAt(current),
-      nextProposer: await this.getProposerAttesterAddressAt(next),
       currentSlot: current.slot,
       nextSlot: next.slot,
     };

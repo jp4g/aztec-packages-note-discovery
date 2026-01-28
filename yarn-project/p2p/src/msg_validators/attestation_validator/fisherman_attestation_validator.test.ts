@@ -33,7 +33,7 @@ describe('FishermanAttestationValidator', () => {
   });
 
   describe('base validation', () => {
-    it('returns high tolerance error if slot number is not current or next slot', async () => {
+    it('returns high tolerance error if slot number is not current or next slot (outside clock tolerance)', async () => {
       // Create an attestation for slot 97
       const header = CheckpointHeader.random({ slotNumber: SlotNumber(97) });
       const mockAttestation = makeCheckpointAttestation({
@@ -43,19 +43,26 @@ describe('FishermanAttestationValidator', () => {
       });
 
       // Mock epoch cache to return different slot numbers
-      epochCache.getProposerAttesterAddressInCurrentOrNextSlot.mockResolvedValue({
-        currentProposer: proposer.address,
-        nextProposer: proposer.address,
+      epochCache.getCurrentAndNextSlot.mockReturnValue({
         currentSlot: SlotNumber(98),
         nextSlot: SlotNumber(99),
+      });
+      // Mock getEpochAndSlotNow to return time OUTSIDE clock tolerance (1000ms elapsed)
+      epochCache.getEpochAndSlotNow.mockReturnValue({
+        epoch: 1 as any,
+        slot: SlotNumber(98),
+        ts: 1000n, // slot started at 1000 seconds
+        nowMs: 1001000n, // 1000ms elapsed, outside 500ms tolerance
       });
       epochCache.isInCommittee.mockResolvedValue(true);
 
       const result = await validator.validate(mockAttestation);
-      expect(result).toBe(PeerErrorSeverity.HighToleranceError);
+      expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.HighToleranceError });
 
       // Should not check attestation pool if base validation fails
       expect(attestationPool.getCheckpointProposal).not.toHaveBeenCalled();
+      // Should not try to resolve proposers if base validation fails
+      expect(epochCache.getProposerAttesterAddressInSlot).not.toHaveBeenCalled();
     });
 
     it('returns high tolerance error if attester is not in committee', async () => {
@@ -65,16 +72,15 @@ describe('FishermanAttestationValidator', () => {
         proposerSigner: proposer,
       });
 
-      epochCache.getProposerAttesterAddressInCurrentOrNextSlot.mockResolvedValue({
-        currentProposer: proposer.address,
-        nextProposer: proposer.address,
+      epochCache.getCurrentAndNextSlot.mockReturnValue({
         currentSlot: SlotNumber(100),
         nextSlot: SlotNumber(101),
       });
+      epochCache.getProposerAttesterAddressInSlot.mockResolvedValue(proposer.address);
       epochCache.isInCommittee.mockResolvedValue(false);
 
       const result = await validator.validate(mockAttestation);
-      expect(result).toBe(PeerErrorSeverity.HighToleranceError);
+      expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.HighToleranceError });
 
       // Should not check attestation pool if base validation fails
       expect(attestationPool.getCheckpointProposal).not.toHaveBeenCalled();
@@ -88,16 +94,15 @@ describe('FishermanAttestationValidator', () => {
         proposerSigner: wrongProposer,
       });
 
-      epochCache.getProposerAttesterAddressInCurrentOrNextSlot.mockResolvedValue({
-        currentProposer: proposer.address,
-        nextProposer: proposer.address,
+      epochCache.getCurrentAndNextSlot.mockReturnValue({
         currentSlot: SlotNumber(100),
         nextSlot: SlotNumber(101),
       });
+      epochCache.getProposerAttesterAddressInSlot.mockResolvedValue(proposer.address);
       epochCache.isInCommittee.mockResolvedValue(true);
 
       const result = await validator.validate(mockAttestation);
-      expect(result).toBe(PeerErrorSeverity.HighToleranceError);
+      expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.HighToleranceError });
 
       // Should not check attestation pool if base validation fails
       expect(attestationPool.getCheckpointProposal).not.toHaveBeenCalled();
@@ -107,9 +112,7 @@ describe('FishermanAttestationValidator', () => {
   describe('fisherman payload validation', () => {
     beforeEach(() => {
       // Setup valid base validation for all fisherman tests
-      epochCache.getProposerAttesterAddressInCurrentOrNextSlot.mockResolvedValue({
-        currentProposer: proposer.address,
-        nextProposer: proposer.address,
+      epochCache.getCurrentAndNextSlot.mockReturnValue({
         currentSlot: SlotNumber(100),
         nextSlot: SlotNumber(101),
       });
@@ -139,7 +142,7 @@ describe('FishermanAttestationValidator', () => {
       attestationPool.getCheckpointProposal.mockResolvedValue(mockProposal);
 
       const result = await validator.validate(mockAttestation);
-      expect(result).toBeUndefined();
+      expect(result).toEqual({ result: 'accept' });
 
       // Should have checked the proposal
       expect(attestationPool.getCheckpointProposal).toHaveBeenCalledWith(mockAttestation.archive.toString());
@@ -166,7 +169,7 @@ describe('FishermanAttestationValidator', () => {
       attestationPool.getCheckpointProposal.mockResolvedValue(mockProposal);
 
       const result = await validator.validate(mockAttestation);
-      expect(result).toBe(PeerErrorSeverity.LowToleranceError);
+      expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.LowToleranceError });
 
       // Should have checked the proposal
       expect(attestationPool.getCheckpointProposal).toHaveBeenCalledWith(mockAttestation.archive.toString());
@@ -184,7 +187,7 @@ describe('FishermanAttestationValidator', () => {
       attestationPool.getCheckpointProposal.mockResolvedValue(undefined);
 
       const result = await validator.validate(mockAttestation);
-      expect(result).toBeUndefined();
+      expect(result).toEqual({ result: 'accept' });
 
       // Should have tried to check the proposal
       expect(attestationPool.getCheckpointProposal).toHaveBeenCalledWith(mockAttestation.archive.toString());
@@ -210,7 +213,7 @@ describe('FishermanAttestationValidator', () => {
       attestationPool.getCheckpointProposal.mockResolvedValue(mockProposal);
 
       const result = await validator.validate(mockAttestation);
-      expect(result).toBe(PeerErrorSeverity.LowToleranceError);
+      expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.LowToleranceError });
     });
 
     it('detects payload mismatch with different header hash', async () => {
@@ -235,16 +238,14 @@ describe('FishermanAttestationValidator', () => {
 
       // Headers are different, so payloads should be different
       const result = await validator.validate(mockAttestation);
-      expect(result).toBe(PeerErrorSeverity.LowToleranceError);
+      expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.LowToleranceError });
     });
   });
 
   describe('edge cases', () => {
     beforeEach(() => {
       // Setup valid base validation
-      epochCache.getProposerAttesterAddressInCurrentOrNextSlot.mockResolvedValue({
-        currentProposer: proposer.address,
-        nextProposer: proposer.address,
+      epochCache.getCurrentAndNextSlot.mockReturnValue({
         currentSlot: SlotNumber(100),
         nextSlot: SlotNumber(101),
       });

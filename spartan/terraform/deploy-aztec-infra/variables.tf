@@ -181,19 +181,19 @@ variable "VALIDATOR_MNEMONIC_START_INDEX" {
 
 variable "VALIDATORS_PER_NODE" {
   description = "The number of validators per node"
-  type        = string
+  type        = number
   default     = 12
 }
 
 variable "VALIDATOR_PUBLISHERS_PER_VALIDATOR_KEY" {
   description = "Number of publisher EOAs per validator key"
-  type        = string
+  type        = number
   default     = 1
 }
 
 variable "VALIDATOR_PUBLISHER_MNEMONIC_START_INDEX" {
   description = "Mnemonic start index for validator publishers"
-  type        = string
+  type        = number
   default     = 5000
 }
 
@@ -215,6 +215,12 @@ variable "VALIDATOR_REPLICAS" {
   description = "The number of validator replicas"
   type        = string
   default     = 4
+}
+
+variable "VALIDATOR_HA_REPLICAS" {
+  description = "Number of additional HA validator releases (0 = no HA, 1 = primary + 1 HA, etc.)"
+  type        = number
+  default     = 0
 }
 
 variable "PROVER_MNEMONIC" {
@@ -329,6 +335,20 @@ variable "SEQ_MAX_TX_PER_BLOCK" {
   description = "Maximum number of sequencer transactions per block"
   type        = string
   default     = "8"
+}
+
+variable "SEQ_BLOCK_DURATION_MS" {
+  description = "Duration per block in milliseconds when building multiple blocks per slot"
+  type        = string
+  nullable    = true
+  default     = null
+}
+
+variable "SEQ_BUILD_CHECKPOINT_IF_EMPTY" {
+  description = "Have sequencer build and publish an empty checkpoint if there are no txs"
+  type        = string
+  nullable    = true
+  default     = null
 }
 
 variable "SENTINEL_ENABLED" {

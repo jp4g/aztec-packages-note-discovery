@@ -23,8 +23,8 @@ describe('CheckpointAttestationValidator', () => {
     attester = Secp256k1Signer.random();
   });
 
-  it('returns high tolerance error if slot number is not current or next slot', async () => {
-    // Create an attestation for slot 97
+  it('returns high tolerance error if slot number is not current or next slot (outside clock tolerance)', async () => {
+    // Create an attestation for slot 97 (previous slot)
     const header = CheckpointHeader.random({ slotNumber: SlotNumber(97) });
     const mockAttestation = makeCheckpointAttestation({
       header,
@@ -33,16 +33,49 @@ describe('CheckpointAttestationValidator', () => {
     });
 
     // Mock epoch cache to return different slot numbers
-    (epochCache.getProposerAttesterAddressInCurrentOrNextSlot as jest.Mock).mockResolvedValue({
-      currentProposer: proposer.address,
-      nextProposer: proposer.address,
+    (epochCache.getCurrentAndNextSlot as jest.Mock).mockReturnValue({
       currentSlot: SlotNumber(98),
       nextSlot: SlotNumber(99),
+    });
+    // Mock getEpochAndSlotNow to return time OUTSIDE clock tolerance (1000ms elapsed)
+    (epochCache.getEpochAndSlotNow as jest.Mock).mockReturnValue({
+      epoch: 1,
+      slot: SlotNumber(98),
+      ts: 1000n, // slot started at 1000 seconds
+      nowMs: 1001000n, // 1000ms elapsed, outside 500ms tolerance
     });
     (epochCache.isInCommittee as jest.Mock).mockResolvedValue(true);
 
     const result = await validator.validate(mockAttestation);
-    expect(result).toBe(PeerErrorSeverity.HighToleranceError);
+    expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.HighToleranceError });
+  });
+
+  it('returns ignore if previous slot attestation is within clock tolerance', async () => {
+    // Create an attestation for slot 97 (previous slot)
+    const header = CheckpointHeader.random({ slotNumber: SlotNumber(97) });
+    const mockAttestation = makeCheckpointAttestation({
+      header,
+      attesterSigner: attester,
+      proposerSigner: proposer,
+    });
+
+    // Mock epoch cache - attestation is for previous slot (97) when current is 98
+    (epochCache.getCurrentAndNextSlot as jest.Mock).mockReturnValue({
+      currentSlot: SlotNumber(98),
+      nextSlot: SlotNumber(99),
+    });
+    // Mock getEpochAndSlotNow to return time WITHIN clock tolerance (100ms elapsed)
+    (epochCache.getEpochAndSlotNow as jest.Mock).mockReturnValue({
+      epoch: 1,
+      slot: SlotNumber(98),
+      ts: 1000n, // slot started at 1000 seconds
+      nowMs: 1000100n, // 100ms elapsed, within 500ms tolerance
+    });
+    (epochCache.isInCommittee as jest.Mock).mockResolvedValue(true);
+    (epochCache.getProposerAttesterAddressInSlot as jest.Mock).mockResolvedValue(proposer.address);
+
+    const result = await validator.validate(mockAttestation);
+    expect(result).toEqual({ result: 'ignore' });
   });
 
   it('returns high tolerance error if attester is not in committee', async () => {
@@ -55,16 +88,14 @@ describe('CheckpointAttestationValidator', () => {
     });
 
     // Mock epoch cache to return matching slot number but invalid committee membership
-    (epochCache.getProposerAttesterAddressInCurrentOrNextSlot as jest.Mock).mockResolvedValue({
-      currentProposer: proposer.address,
-      nextProposer: proposer.address,
+    (epochCache.getCurrentAndNextSlot as jest.Mock).mockReturnValue({
       currentSlot: SlotNumber(100),
       nextSlot: SlotNumber(101),
     });
     (epochCache.isInCommittee as jest.Mock).mockResolvedValue(false);
 
     const result = await validator.validate(mockAttestation);
-    expect(result).toBe(PeerErrorSeverity.HighToleranceError);
+    expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.HighToleranceError });
   });
 
   it('returns undefined if checkpoint attestation is valid (current slot)', async () => {
@@ -77,9 +108,7 @@ describe('CheckpointAttestationValidator', () => {
     });
 
     // Mock epoch cache for valid case with current slot
-    (epochCache.getProposerAttesterAddressInCurrentOrNextSlot as jest.Mock).mockResolvedValue({
-      currentProposer: proposer.address,
-      nextProposer: proposer.address,
+    (epochCache.getCurrentAndNextSlot as jest.Mock).mockReturnValue({
       currentSlot: SlotNumber(100),
       nextSlot: SlotNumber(101),
     });
@@ -87,7 +116,7 @@ describe('CheckpointAttestationValidator', () => {
     (epochCache.getProposerAttesterAddressInSlot as jest.Mock).mockResolvedValue(proposer.address);
 
     const result = await validator.validate(mockAttestation);
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ result: 'accept' });
   });
 
   it('returns undefined if checkpoint attestation is valid (next slot)', async () => {
@@ -100,9 +129,7 @@ describe('CheckpointAttestationValidator', () => {
     });
 
     // Mock epoch cache for valid case with next slot
-    (epochCache.getProposerAttesterAddressInCurrentOrNextSlot as jest.Mock).mockResolvedValue({
-      currentProposer: proposer.address,
-      nextProposer: proposer.address,
+    (epochCache.getCurrentAndNextSlot as jest.Mock).mockReturnValue({
       currentSlot: SlotNumber(100),
       nextSlot: SlotNumber(101),
     });
@@ -110,7 +137,7 @@ describe('CheckpointAttestationValidator', () => {
     (epochCache.getProposerAttesterAddressInSlot as jest.Mock).mockResolvedValue(proposer.address);
 
     const result = await validator.validate(mockAttestation);
-    expect(result).toBeUndefined();
+    expect(result).toEqual({ result: 'accept' });
   });
 
   it('returns high tolerance error if proposer signature is invalid', async () => {
@@ -123,16 +150,14 @@ describe('CheckpointAttestationValidator', () => {
     });
 
     // Mock epoch cache with different proposer
-    (epochCache.getProposerAttesterAddressInCurrentOrNextSlot as jest.Mock).mockResolvedValue({
-      currentProposer: proposer.address,
-      nextProposer: proposer.address,
+    (epochCache.getCurrentAndNextSlot as jest.Mock).mockReturnValue({
       currentSlot: SlotNumber(100),
       nextSlot: SlotNumber(101),
     });
     (epochCache.isInCommittee as jest.Mock).mockResolvedValue(true);
 
     const result = await validator.validate(mockAttestation);
-    expect(result).toBe(PeerErrorSeverity.HighToleranceError);
+    expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.HighToleranceError });
   });
 
   it('returns low tolerance error if no committee exists', async () => {
@@ -145,9 +170,14 @@ describe('CheckpointAttestationValidator', () => {
     });
 
     // Mock epoch cache to throw NoCommitteeError
-    (epochCache.getProposerAttesterAddressInCurrentOrNextSlot as jest.Mock).mockRejectedValue(new NoCommitteeError());
+    (epochCache.getCurrentAndNextSlot as jest.Mock).mockReturnValue({
+      currentSlot: SlotNumber(100),
+      nextSlot: SlotNumber(101),
+    });
+    (epochCache.isInCommittee as jest.Mock).mockReturnValue(true);
+    (epochCache.getProposerAttesterAddressInSlot as jest.Mock).mockRejectedValue(new NoCommitteeError());
 
     const result = await validator.validate(mockAttestation);
-    expect(result).toBe(PeerErrorSeverity.LowToleranceError);
+    expect(result).toEqual({ result: 'reject', severity: PeerErrorSeverity.LowToleranceError });
   });
 });

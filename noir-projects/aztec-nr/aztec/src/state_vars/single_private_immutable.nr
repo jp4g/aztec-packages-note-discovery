@@ -5,13 +5,13 @@ use crate::{
         lifecycle::create_note,
         note_getter::{get_note, view_note},
         note_interface::{NoteHash, NoteType},
-        note_message::NoteMessage,
+        NoteMessage,
     },
-    oracle::notes::check_nullifier_exists,
-    state_vars::state_variable::StateVariable,
+    oracle::nullifiers::check_nullifier_exists,
+    state_vars::StateVariable,
 };
 
-use protocol_types::{
+use crate::protocol::{
     constants::DOM_SEP__INITIALIZATION_NULLIFIER,
     hash::poseidon2_hash_with_separator,
     traits::{Hash, Packable},
@@ -19,14 +19,17 @@ use protocol_types::{
 
 mod test;
 
+/// Contract-wide immutable private state.
+///
 /// A state variable that holds a single private value that is set once and remains unchanged forever (unlike
-/// [crate::state_vars::private_immutable::PrivateImmutable], which holds one private value _per account_ - hence
-/// the name 'single').
+/// [crate::state_vars::private_immutable::PrivateImmutable], which holds one private value _per account_ - hence the
+/// name 'single').
 ///
 /// Because this private value has no semantic owner, it is up to the application to determine which accounts will
 /// learn of its existence via [crate::note::note_message::NoteMessage::deliver_to].
 ///
 /// # Usage
+///
 /// Unlike [crate::state_vars::private_immutable::PrivateImmutable] which is "owned" (requiring wrapping in an
 /// [crate::state_vars::owned::Owned] state variable), SinglePrivateImmutable is used directly in storage:
 ///
@@ -80,8 +83,8 @@ impl<Note, Context> SinglePrivateImmutable<Note, Context> {
 impl<Note> SinglePrivateImmutable<Note, &mut PrivateContext> {
     /// Computes the nullifier that will be created when this SinglePrivateImmutable is first initialized.
     ///
-    /// This function is primarily used internally by the `initialize` method, but may also be useful for contracts that
-    /// need to check if a SinglePrivateImmutable has been initialized.
+    /// This function is primarily used internally by the `initialize` method, but may also be useful for contracts
+    /// that need to check if a SinglePrivateImmutable has been initialized.
     fn get_initialization_nullifier(self) -> Field {
         let contract_address = self.context.this_address();
         let contract_npk_m = get_public_keys(contract_address).npk_m;
@@ -133,12 +136,12 @@ impl<Note> SinglePrivateImmutable<Note, &mut PrivateContext> {
     {
         // The note owner is set to none rather than msg_sender(), which means that anyone with access to this note in
         // the PXE can read it.
-        let retrieved_note = get_note(self.context, Option::none(), self.storage_slot).0;
+        let confirmed_note = get_note(self.context, Option::none(), self.storage_slot);
 
         // Because the notes obtained from SinglePrivateImmutable are not meant to be nullified and get_note(...)
-        // function has already constrained the note (by pushing a read request to the context), we can return just
-        // the note and skip the additional data in RetrievedNote.
-        retrieved_note.note
+        // function has already constrained the note (by pushing a read request to the context), we can return just the
+        // note and skip the additional data in ConfirmedNote.
+        confirmed_note.note
     }
 }
 

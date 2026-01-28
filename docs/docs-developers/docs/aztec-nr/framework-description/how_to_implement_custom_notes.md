@@ -4,6 +4,7 @@ description: Learn how to create and use custom note types for specialized priva
 sidebar_position: 6
 tags: [smart contracts, notes, privacy]
 keywords: [implementing note, note, custom note]
+references: ["docs/examples/tutorials/token_bridge_contract/contracts/aztec/nft/*", "noir-projects/noir-contracts/contracts/app/nft_contract/*"]
 ---
 
 This guide shows you how to create custom note types for storing specialized private data in your Aztec contracts.
@@ -125,7 +126,7 @@ use aztec::{
     context::PrivateContext,
     macros::notes::custom_note,
     note::note_interface::NoteHash,
-    protocol_types::{
+    protocol::{
         address::AztecAddress,
         constants::{DOM_SEP__NOTE_HASH, DOM_SEP__NOTE_NULLIFIER},
         hash::poseidon2_hash_with_separator,
