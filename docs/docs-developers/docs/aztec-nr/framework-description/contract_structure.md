@@ -31,7 +31,7 @@ use aztec::macros::aztec;
 
 // use the 'contract' keyword to declare a contract, applying the `aztec` macro
 #[aztec]
-contract MyContract {
+pub contract MyContract {
     // contract code here
 }
 ```
