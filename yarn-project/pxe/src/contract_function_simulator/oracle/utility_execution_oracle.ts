@@ -96,9 +96,14 @@ export class UtilityExecutionOracle implements IMiscOracle, IUtilityExecutionOra
     // If scopes are defined, check that the key belongs to an account in the scopes
     if (this.scopes && this.scopes.length > 0) {
       const [, account] = await this.keyStore.getKeyPrefixAndAccount(pkMHash);
+      this.log.debug(
+        `Key validation request for account ${account.toString()}, scopes: [${this.scopes.map(s => s.toString()).join(', ')}], contract: ${this.contractAddress.toString()}`,
+      );
       if (!this.scopes.some(scope => scope.equals(account))) {
         throw new Error(`Key validation request denied: account ${account.toString()} is not in the allowed scopes. `);
       }
+    } else {
+      this.log.debug(`Key validation request (no scopes), contract: ${this.contractAddress.toString()}`);
     }
     return this.keyStore.getKeyValidationRequest(pkMHash, this.contractAddress);
   }

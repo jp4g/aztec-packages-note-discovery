@@ -133,7 +133,7 @@ unconstrained fn transfer_to_public_failure_on_behalf_of_other_invalid_designate
     env.call_private(recipient, transfer_to_public_call);
 }
 
-#[test(should_fail_with = "Unknown auth witness for message hash")]
+#[test(should_fail_with = "Failed to get a note")]
 unconstrained fn transfer_to_public_failure_on_behalf_of_other_no_approval() {
     let (env, token_contract_address, owner, recipient, mint_amount) =
         utils::setup_and_mint_to_private(/* with_account_contracts */ true);

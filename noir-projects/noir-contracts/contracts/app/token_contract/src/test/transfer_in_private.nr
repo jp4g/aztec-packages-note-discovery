@@ -52,7 +52,7 @@ unconstrained fn transfer_private_failure_on_behalf_of_more_than_balance() {
     env.call_private(recipient, transfer_private_from_call);
 }
 
-#[test(should_fail_with = "Unknown auth witness for message hash")]
+#[test(should_fail_with = "Failed to get a note")]
 unconstrained fn transfer_private_failure_on_behalf_of_other_without_approval() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     let (env, token_contract_address, owner, recipient, _) =

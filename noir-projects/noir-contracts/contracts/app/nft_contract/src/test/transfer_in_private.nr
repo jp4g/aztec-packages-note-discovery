@@ -99,7 +99,7 @@ unconstrained fn transfer_in_private_failure_on_behalf_of_self_non_zero_nonce() 
     );
 }
 
-#[test(should_fail_with = "Unknown auth witness for message hash")]
+#[test(should_fail_with = "Failed to get a note")]
 unconstrained fn transfer_in_private_failure_on_behalf_of_other_without_approval() {
     // Setup with account contracts. Slower since we actually deploy them, but needed for authwits.
     // The authwit check is in the beginning so we don't need to waste time on minting the NFT and transferring

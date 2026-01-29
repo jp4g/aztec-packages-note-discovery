@@ -120,6 +120,7 @@ export interface TXESessionStateHandler {
 export class TXESession implements TXESessionStateHandler {
   private state: SessionState = { name: 'TOP_LEVEL' };
   private authwits: Map<string, AuthWitness> = new Map();
+  private authwitAccounts: Set<string> = new Set();
 
   constructor(
     private logger: Logger,
@@ -300,6 +301,7 @@ export class TXESession implements TXESessionStateHandler {
       this.version,
       this.chainId,
       this.authwits,
+      this.authwitAccounts,
     );
 
     this.state = { name: 'TOP_LEVEL' };
@@ -451,7 +453,9 @@ export class TXESession implements TXESessionStateHandler {
     // level context is re-created. This is because authwits create a temporary utility context that'd otherwise reset
     // the authwits if not persisted, so we'd not be able to pass more than one per execution.
     // Ideally authwits would be passed alongside a contract call instead of pre-seeded.
-    [this.nextBlockTimestamp, this.authwits] = (this.oracleHandler as TXEOracleTopLevelContext).close();
+    [this.nextBlockTimestamp, this.authwits, this.authwitAccounts] = (
+      this.oracleHandler as TXEOracleTopLevelContext
+    ).close();
   }
 
   private async exitPrivateState() {

@@ -112,6 +112,7 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
     private version: Fr,
     private chainId: Fr,
     private authwits: Map<string, AuthWitness>,
+    private authwitAccounts: Set<string> = new Set(),
   ) {
     this.logger = createLogger('txe:top_level_context');
     this.logger.debug('Entering Top Level Context');
@@ -250,6 +251,7 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
     const authWitness = new AuthWitness(messageHash, [...signature.toBuffer()]);
 
     this.authwits.set(authWitness.requestHash.toString(), authWitness);
+    this.authwitAccounts.add(address.toString());
   }
 
   async mineBlock(options: { nullifiers?: Fr[] } = {}) {
@@ -297,9 +299,15 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
       throw new Error(message);
     }
 
+    // Compute effective scopes: caller + any accounts that have authorized via authwit
+    // This simulates production PXE behavior where the authorizing account's keys were
+    // used to sign the authwit, and so their keys should be accessible during execution
+    const authwitAccountAddresses = Array.from(this.authwitAccounts).map(s => AztecAddress.fromString(s));
+    const effectiveScopes = from.isZero() ? undefined : [from, ...authwitAccountAddresses];
+
     // Sync notes before executing private function to discover notes from previous transactions
     const utilityExecutor = async (call: FunctionCall) => {
-      await this.executeUtilityCall(call, [from]);
+      await this.executeUtilityCall(call, effectiveScopes);
     };
 
     await syncState(targetContractAddress, this.contractStore, functionSelector, utilityExecutor);
@@ -356,7 +364,7 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
       0, // totalPublicArgsCount
       minRevertibleSideEffectCounter, // (start) sideEffectCounter
       undefined, // log
-      [from], // scopes - use the caller's address to filter notes
+      effectiveScopes, // scopes - allows caller + authwit accounts
       /**
        * In TXE, the typical transaction entrypoint is skipped, so we need to simulate the actions that such a
        * contract would perform, including setting senderForTags.
@@ -718,9 +726,9 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
     }
   }
 
-  close(): [bigint, Map<string, AuthWitness>] {
+  close(): [bigint, Map<string, AuthWitness>, Set<string>] {
     this.logger.debug('Exiting Top Level Context');
-    return [this.nextBlockTimestamp, this.authwits];
+    return [this.nextBlockTimestamp, this.authwits, this.authwitAccounts];
   }
 
   private async getLastBlockNumber(): Promise<BlockNumber> {

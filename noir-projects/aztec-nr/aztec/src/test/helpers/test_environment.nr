@@ -40,6 +40,10 @@ impl Counter {
         Self { next_value: 0 }
     }
 
+    fn new_with_offset(offset: Field) -> Self {
+        Self { next_value: offset }
+    }
+
     fn next(&mut self) -> Field {
         let ret = self.next_value;
         self.next_value += 1;
@@ -136,9 +140,13 @@ impl TestEnvironment {
     pub unconstrained fn new() -> Self {
         assert_compatible_oracle_version();
         Self {
+            // Use an offset to avoid secret collision with account secrets. Without this, when
+            // deploying multiple contracts and creating accounts, they could end up with identical
+            // secrets (e.g., Token1 with deployment secret=1 and liquidity_provider with account
+            // secret=1), causing key collisions since keys are derived from the secret alone.
             light_account_secret: Counter::new(),
-            contract_account_secret: Counter::new(),
-            contract_deployment_secret: Counter::new(),
+            contract_account_secret: Counter::new_with_offset(1_000),
+            contract_deployment_secret: Counter::new_with_offset(2_000),
         }
     }
 

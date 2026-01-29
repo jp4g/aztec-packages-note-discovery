@@ -100,7 +100,7 @@ unconstrained fn transfer_to_public_and_prepare_private_balance_increase_failure
     );
 }
 
-#[test(should_fail_with = "Unknown auth witness for message hash")]
+#[test(should_fail_with = "Failed to get a note")]
 unconstrained fn transfer_to_public_and_prepare_private_balance_increase_failure_on_behalf_of_other_no_approval() {
     let (env, token_contract_address, sender, recipient, mint_amount) =
         utils::setup_and_mint_to_private(/* with_account_contracts */ true);

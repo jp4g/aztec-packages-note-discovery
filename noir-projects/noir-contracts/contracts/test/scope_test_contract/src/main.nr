@@ -74,10 +74,12 @@ pub contract ScopeTest {
             assert_eq(read_value, value);
         }
 
-        /// Bob tries to create a note for Alice.
-        /// This should FAIL because Bob cannot access Alice's keys.
-        /// The PrivateImmutable.initialize() requires the owner's nullifier secret key,
-        /// and scope isolation prevents Bob from accessing Alice's keys.
+        /// Bob cannot create a note for Alice because scope isolation is enforced.
+        /// When Bob calls create_note(alice, value), the function needs Alice's nsk_app to
+        /// compute the note's nullifier key, but Bob is not authorized to access Alice's keys.
+        ///
+        /// Note: In production, this would also fail because Bob's PXE doesn't have Alice's keys.
+        /// TXE simulates this production behavior through scope filtering.
         #[test(should_fail_with = "Key validation request denied")]
         unconstrained fn bob_cannot_create_note_for_alice() {
             let (mut env, contract_address) = setup();
@@ -86,16 +88,17 @@ pub contract ScopeTest {
             let bob = env.create_light_account();
             let value: Field = 42;
 
-            // Bob tries to create a note for Alice - this FAILS due to scope isolation
-            // Bob cannot access Alice's nullifier secret key
+            // Bob tries to create a note for Alice, but this fails because
+            // Bob doesn't have access to Alice's keys (scope isolation).
             env.call_private(bob, ScopeTest::at(contract_address).create_note(alice, value));
         }
 
-        /// Alice creates a note for herself, then Bob tries to read it.
-        /// Bob should NOT be able to read Alice's notes - scope isolation prevents this.
+        /// Bob cannot read Alice's notes because scope isolation is enforced.
+        /// When Bob calls read_note(alice), he can only access notes where he is in scope.
+        /// Alice's notes are not visible to Bob's execution context.
         ///
-        /// This test expects failure with "Failed to get a note" because Bob cannot
-        /// read notes scoped to Alice.
+        /// Note: In production, Bob's PXE wouldn't have Alice's notes at all.
+        /// TXE simulates this through scope filtering on note retrieval.
         #[test(should_fail_with = "Failed to get a note")]
         unconstrained fn bob_cannot_read_alice_notes() {
             let (mut env, contract_address) = setup();
@@ -107,7 +110,8 @@ pub contract ScopeTest {
             // Alice creates a note for herself
             env.call_private(alice, ScopeTest::at(contract_address).create_note(alice, value));
 
-            // Bob tries to read Alice's note - this FAILS due to scope isolation
+            // Bob tries to read Alice's note, but this fails because
+            // Bob doesn't have access to Alice's notes (scope isolation).
             let _read_value =
                 env.call_private(bob, ScopeTest::at(contract_address).read_note(alice));
         }

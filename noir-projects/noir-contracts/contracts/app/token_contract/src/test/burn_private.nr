@@ -74,7 +74,7 @@ unconstrained fn burn_private_failure_on_behalf_of_other_more_than_balance() {
     env.call_private(recipient, burn_call);
 }
 
-#[test(should_fail_with = "Unknown auth witness for message hash")]
+#[test(should_fail_with = "Failed to get a note")]
 unconstrained fn burn_private_failure_on_behalf_of_other_without_approval() {
     let (env, token_contract_address, owner, recipient, mint_amount) =
         utils::setup_and_mint_to_public(/* with_account_contracts */ true);
