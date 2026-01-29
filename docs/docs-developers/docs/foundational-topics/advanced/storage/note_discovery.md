@@ -51,7 +51,7 @@ Note discovery is implemented in contract code rather than by the PXE. The `#[az
 
 ### Limitations and Solutions
 
-#### You cannot receive notes from an unknown sender
+#### You cannot receive tagged notes from an unknown sender
 
 Without knowing the sender's address, you cannot create the shared secret needed to derive the note tag. This is a fundamental limitation of the current tagging scheme.
 
