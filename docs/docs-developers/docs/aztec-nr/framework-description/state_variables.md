@@ -339,9 +339,9 @@ Below is a table comparing certain key properties of the different private state
 
 | State variable     | Mutable? | Cost to read? | Writable by third parties? | Example use case                                                                                               |
 | ------------------ | -------- | ------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `PrivateMutable`   | yes      | yes           | no                         | Mutable user state only accessible by them (e.g. user settings or keys)                                        |
-| `PrivateImmutable` | no       | no            | no                         | Fixed configuration, one-way actions (e.g. initialization settings for a proposal)                             |
-| `PrivateSet`       | yes      | yes           | yes                        | Aggregated state others can add to, e.g. token balance (set of amount notes), nft collections (set of nft ids) |
+| [`PrivateMutable`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/state_vars/struct.privatemutable)   | yes      | yes           | no                         | Mutable user state only accessible by them (e.g. user settings or keys)                                        |
+| [`PrivateImmutable`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/state_vars/struct.privateimmutable) | no       | no            | no                         | Fixed configuration, one-way actions (e.g. initialization settings for a proposal)                             |
+| [`PrivateSet`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/state_vars/struct.privateset)       | yes      | yes           | yes                        | Aggregated state others can add to, e.g. token balance (set of amount notes), nft collections (set of nft ids) |
 
 ### Owned State Variables
 
