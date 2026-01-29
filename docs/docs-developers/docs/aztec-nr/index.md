@@ -10,6 +10,10 @@ import DocCardList from "@theme/DocCardList";
 
 Aztec.nr is a Noir framework used to develop and test Aztec smart contracts. It contains both high-level abstractions (state variables, messages) and low-level protocol primitives, providing granular control to developers if they want custom contracts.
 
+:::tip
+If you are already familiar with writing Aztec smart contracts and Aztec.nr, visit the [API reference](https://docs.aztec.network/aztec-nr-api/nightly/).
+:::
+
 ## Motivation
 
 Noir _can_ be used to write circuits, but Aztec contracts are more complex than this. They include multiple external functions, each of a different type: circuits for private functions, AVM bytecode for public functions, and brillig bytecode for utility functions. The circuits for private functions are also need to interact with the protocol's kernel circuits in specific ways, so manually writing them, and then combining everything into a contract artifact is involved work. Aztec.nr takes care of all of this heavy lifting and makes writing contracts as simple as marking functions with the corresponding attributes e.g. `#[external(private)]`.

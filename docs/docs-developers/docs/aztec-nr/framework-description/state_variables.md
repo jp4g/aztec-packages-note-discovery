@@ -42,7 +42,7 @@ contract MyContract {
 }
 ```
 
-In Aztec.nr, we define a [`struct`](https://noir-lang.org/docs/noir/concepts/data_types/structs) that holds _all_ state variables. This struct is called **the storage struct**, and it is identified by having the `#[storage]` macro applied to it.
+In Aztec.nr, we define a [`struct`](https://noir-lang.org/docs/noir/concepts/data_types/structs) that holds _all_ state variables. This struct is called **the storage struct**, and it is identified by having the [`#[storage]` macro](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/macros/storage/fn.storage) applied to it.
 
 ```rust
 use aztec::macros::aztec;
@@ -106,9 +106,9 @@ Below is a table comparing the key properties of the different public state vari
 
 | State variable         | Mutable?            | Readable in private? | Writable in private? | Example use case                                                                   |
 | ---------------------- | ------------------- | -------------------- | -------------------- | ---------------------------------------------------------------------------------- |
-| `PublicMutable`        | yes                 | no                   | no                   | Configuration of admins, global state (e.g. token total supply, total votes) |
-| `PublicImmutable`      | no                  | yes                  | no                   | Fixed configuration, one-way actions (e.g. initialization settings for a proposal) |
-| `DelayedPublicMutable` | yes (after a delay) | yes                  | no                   | Non time sensitive system configuration                                            |
+| [`PublicMutable`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/state_vars/struct.publicmutable)        | yes                 | no                   | no                   | Configuration of admins, global state (e.g. token total supply, total votes) |
+| [`PublicImmutable`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/state_vars/struct.publicimmutable)      | no                  | yes                  | no                   | Fixed configuration, one-way actions (e.g. initialization settings for a proposal) |
+| [`DelayedPublicMutable`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/state_vars/struct.delayedpublicmutable) | yes (after a delay) | yes                  | no                   | Non time sensitive system configuration                                            |
 
 ### PublicMutable
 
@@ -272,11 +272,11 @@ When working with private state variables, many operations return a `NoteMessage
 
 #### Delivery Methods
 
-Private notes need to be communicated to their recipients so they know the note exists and can use it. The `NoteMessage` wrapper forces you to make an explicit choice about how this happens:
-
-  - `MessageDelivery.ONCHAIN_CONSTRAINED`: Verified in the circuit (most secure, but highest cost) - Use when the sender cannot be trusted to deliver correctly (e.g., protocol fees, multisig config updates). **Warning:** Currently [not fully constrained](https://github.com/AztecProtocol/aztec-packages/issues/14565) - the log's tag is unconstrained.
-  - `MessageDelivery.ONCHAIN_UNCONSTRAINED`: Message stored onchain but no guarantees on content - Use when the sender is incentivized to deliver correctly but may not have an offchain channel to the recipient.
-  - `MessageDelivery.OFFCHAIN`: Lowest cost, no onchain data - Use when the sender and recipient can communicate and the sender is incentivized to deliver correctly.
+Private notes need to be communicated to their recipients so they know the note exists and can use it. The [`NoteMessage`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/note/struct.notemessage) wrapper forces you to make an explicit choice about how this happens:
+[
+  - `MessageDelivery.ONCHAIN_CONSTRAINED`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/messages/message_delivery/struct.messagedeliveryenum#structfield.ONCHAIN_UNCONSTRAINED): Verified in the circuit (most secure, but highest cost) - Use when the sender cannot be trusted to deliver correctly (e.g., protocol fees, multisig config updates). **Warning:** Currently [not fully constrained](https://github.com/AztecProtocol/aztec-packages/issues/14565) - the log's tag is unconstrained.
+  - [`MessageDelivery.ONCHAIN_UNCONSTRAINED`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/messages/message_delivery/struct.messagedeliveryenum#structfield.ONCHAIN_UNCONSTRAINED): Message stored onchain but no guarantees on content - Use when the sender is incentivized to deliver correctly but may not have an offchain channel to the recipient.
+  - [`MessageDelivery.OFFCHAIN`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/messages/message_delivery/struct.messagedeliveryenum#structfield.OFFCHAIN): Lowest cost, no onchain data - Use when the sender and recipient can communicate and the sender is incentivized to deliver correctly.
 
 #include_code note_delivery /noir-projects/noir-contracts/contracts/app/private_token_contract/src/main.nr rust
 

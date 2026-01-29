@@ -44,7 +44,7 @@ The `#[aztec]` macro performs a lot of the low-level operations required to take
 
 ## Imports
 
-Aside from the `#[aztec]` macro import, all other imports need to go _inside_ the `contract` block - this is because `contract` acts like `mod`, creating a new [module](https://noir-lang.org/docs/noir/modules_packages_crates/modules).
+Aside from the [`#[aztec]`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/macros/aztec/fn.aztec) macro import, all other imports need to go _inside_ the `contract` block - this is because `contract` acts like `mod`, creating a new [module](https://noir-lang.org/docs/noir/modules_packages_crates/modules).
 
 ```rust
 use aztec::macros::aztec;
@@ -103,7 +103,7 @@ pub contract MyContract {
 
 Like Solidity contracts, Aztec contracts can define events to notify that some state has changed. However, in Aztec, events can also be emitted privately, in which case only some users will learn of the event.
 
-Events are a struct marked with the `#[event]` macro:
+[Events](./how_to_emit_event.md) are a struct marked with the `#[event]` macro:
 
 ```rust
 #[event]
@@ -116,7 +116,7 @@ struct Transfer {
 
 ## Functions
 
-Contracts are interacted with by invoking their `external` functions. There are three kinds of `external` functions:
+Contracts are interacted with by invoking their `external` [functions](./functions/index.md). There are three kinds of `external` functions:
 
 - External **private** functions, which reveal nothing about their execution and are executed off chain on the user's device, producing a zero-knowledge proof of execution that is sent to the network as part of a transaction.
 - External **public** functions, which nodes in the network invoke publicly (like any `external` Solidity contract function).
