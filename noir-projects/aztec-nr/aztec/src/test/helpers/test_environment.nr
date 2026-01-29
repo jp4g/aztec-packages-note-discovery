@@ -512,12 +512,19 @@ impl TestEnvironment {
     ///
     /// Unlike `call_private`, no transaction is created and no block is mined (since `#[view]` functions are only
     /// executable in a static context, and these produce no side effects).
-    pub unconstrained fn view_private<let M: u32, let N: u32, T>(_self: Self, call: PrivateStaticCall<M, N, T>) -> T
+    ///
+    /// The `viewer` parameter specifies the account from whose perspective the view is executed. This affects
+    /// scope isolation - only notes scoped to this account will be visible during execution.
+    pub unconstrained fn view_private<let M: u32, let N: u32, T>(
+        _self: Self,
+        viewer: AztecAddress,
+        call: PrivateStaticCall<M, N, T>,
+    ) -> T
     where
         T: Deserialize,
     {
         let serialized_return_values = txe_oracles::private_call_new_flow(
-            std::mem::zeroed(), // The 'from' address is currently not manually set
+            viewer,
             call.target_contract,
             call.selector,
             call.args,
@@ -746,7 +753,7 @@ impl TestEnvironment {
         self.discover_data_in_message_plaintext(
             message_plaintext,
             opts.contract_address,
-            Option::none(),
+            Option::some(note_message.new_note.owner),
             compute_note_hash_and_nullifier,
         );
     }

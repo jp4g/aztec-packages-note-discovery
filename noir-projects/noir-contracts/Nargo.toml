@@ -60,5 +60,6 @@ members = [
     "contracts/test/test_contract",
     "contracts/test/test_log_contract",
     "contracts/test/updatable_contract",
-    "contracts/test/updated_contract"
+    "contracts/test/updated_contract",
+    "contracts/test/scope_test_contract"
 ]
