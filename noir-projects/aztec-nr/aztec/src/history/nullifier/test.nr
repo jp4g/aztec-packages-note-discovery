@@ -4,23 +4,18 @@ use crate::history::{
     test,
 };
 use crate::oracle::{nullifiers::notify_created_nullifier, random::random};
+use crate::protocol::{constants::DOM_SEP__SILOED_NULLIFIER, hash::poseidon2_hash_with_separator, traits::ToField};
 use crate::test::helpers::test_environment::{PrivateContextOptions, TestEnvironment};
-use dep::protocol_types::{
-    constants::DOM_SEP__OUTER_NULLIFIER, hash::poseidon2_hash_with_separator, traits::ToField,
-};
 
 #[test]
 unconstrained fn note_is_nullified_succeeds_on_blocks_after_note_nullification() {
     let (env, hinted_note) = test::create_note_and_nullify_it();
 
-    env.private_context_opts(
-        PrivateContextOptions::new().at_anchor_block_number(test::NOTE_NULLIFIED_AT),
-        |context| {
-            let header = context.anchor_block_header;
-            let confirmed_note = assert_note_existed_by(header, hinted_note);
-            assert_note_was_nullified_by(header, confirmed_note, context);
-        },
-    );
+    env.private_context_opts(PrivateContextOptions::new().at_anchor_block_number(test::NOTE_NULLIFIED_AT), |context| {
+        let header = context.anchor_block_header;
+        let confirmed_note = assert_note_existed_by(header, hinted_note);
+        assert_note_was_nullified_by(header, confirmed_note, context);
+    });
 }
 
 #[test(should_fail_with = "Nullifier membership witness not found at block")]
@@ -48,19 +43,16 @@ unconstrained fn assert_nullifier_existed_by_succeeds_on_blocks_after_nullifier_
         // We need to compute the siloed nullifier so we can check for its inclusion in state.
         poseidon2_hash_with_separator(
             [context.this_address().to_field(), unsiloed_nullifier],
-            DOM_SEP__OUTER_NULLIFIER,
+            DOM_SEP__SILOED_NULLIFIER,
         )
     });
 
     let nullifier_created_at = env.last_block_number();
 
-    env.private_context_opts(
-        PrivateContextOptions::new().at_anchor_block_number(nullifier_created_at),
-        |context| {
-            let header = context.anchor_block_header;
-            assert_nullifier_existed_by(header, siloed_nullifier);
-        },
-    );
+    env.private_context_opts(PrivateContextOptions::new().at_anchor_block_number(nullifier_created_at), |context| {
+        let header = context.anchor_block_header;
+        assert_nullifier_existed_by(header, siloed_nullifier);
+    });
 }
 
 #[test(should_fail_with = "Nullifier membership witness not found")]
@@ -91,14 +83,11 @@ unconstrained fn note_not_nullified_succeeds_in_blocks_before_note_nullification
 unconstrained fn note_not_nullified_fails_in_blocks_after_note_nullification_fails() {
     let (env, hinted_note) = test::create_note_and_nullify_it();
 
-    env.private_context_opts(
-        PrivateContextOptions::new().at_anchor_block_number(test::NOTE_NULLIFIED_AT),
-        |context| {
-            let header = context.anchor_block_header;
-            let confirmed_note = assert_note_existed_by(header, hinted_note);
-            assert_note_was_not_nullified_by(header, confirmed_note, context);
-        },
-    );
+    env.private_context_opts(PrivateContextOptions::new().at_anchor_block_number(test::NOTE_NULLIFIED_AT), |context| {
+        let header = context.anchor_block_header;
+        let confirmed_note = assert_note_existed_by(header, hinted_note);
+        assert_note_was_not_nullified_by(header, confirmed_note, context);
+    });
 }
 
 #[test]
@@ -122,17 +111,14 @@ unconstrained fn nullifier_non_inclusion_fails_in_blocks_after_nullifier_creatio
         // We need to compute the siloed nullifier so we can check for its inclusion in state.
         poseidon2_hash_with_separator(
             [context.this_address().to_field(), unsiloed_nullifier],
-            DOM_SEP__OUTER_NULLIFIER,
+            DOM_SEP__SILOED_NULLIFIER,
         )
     });
 
     let nullifier_created_at = env.last_block_number();
 
-    env.private_context_opts(
-        PrivateContextOptions::new().at_anchor_block_number(nullifier_created_at),
-        |context| {
-            let header = context.anchor_block_header;
-            assert_nullifier_did_not_exist_by(header, siloed_nullifier);
-        },
-    );
+    env.private_context_opts(PrivateContextOptions::new().at_anchor_block_number(nullifier_created_at), |context| {
+        let header = context.anchor_block_header;
+        assert_nullifier_did_not_exist_by(header, siloed_nullifier);
+    });
 }

@@ -9,6 +9,39 @@ Aztec is in active development. Each version may introduce breaking changes that
 
 ## TBD
 
+### [Aztec.nr] `protocol_types` renamed to `protocol`
+
+The `protocol_types` re-export from the `aztec` crate has been renamed to `protocol`. Update all imports accordingly:
+
+```diff
+- use dep::aztec::protocol_types::address::AztecAddress;
++ use dep::aztec::protocol::address::AztecAddress;
+```
+
+### Protocol contract interface separate from protocol contracts
+
+We've stripped protocol contract of `aztec-nr` macros in order for auditors to not need to audit them (protocol contracts are to be audited during the protocol circuits audit).
+This results in the nice Noir interface no longer being generated.
+
+For context, this is the interface I am talking about:
+
+```noir
+let update_delay = self.view(MyContract::at(my_contract_address).my_fn());
+```
+
+where the macros generate the `MyContract` struct.
+
+For this reason we've created place holder protocol contracts in `noir-projects/noir-contracts/contracts/protocol_interface` that still have these macros applied and hence you can use them to get the interface.
+
+On your side all you need to do is update the dependency in `Nargo.toml`:
+
+```diff
+-auth_contract = { path = "../../protocol/auth_registry_contract" }
++auth_contract = { path = "../../protocol_interface/auth_registry_interface" }
+-instance_contract = { path = "../../protocol/contract_instance_registry" }
++instance_contract = { path = "../../protocol_interface/contract_instance_registry_interface" }
+```
+
 ### [aztec-nr] History module refactored to use standalone functions
 
 The `aztec::history` module has been refactored to use standalone functions instead of traits. This changes the calling convention from method syntax to function syntax.
@@ -24,19 +57,19 @@ let block_header = context.get_anchor_block_header();
 
 **Function name and module mapping:**
 
-| Old (trait method) | New (standalone function) |
-|--------------------|---------------------------|
-| `history::note_inclusion::prove_note_inclusion` | `history::note::assert_note_existed_by` |
-| `history::note_validity::prove_note_validity` | `history::note::assert_note_was_valid_by` |
-| `history::nullifier_inclusion::prove_nullifier_inclusion` | `history::nullifier::assert_nullifier_existed_by` |
-| `history::nullifier_inclusion::prove_note_is_nullified` | `history::note::assert_note_was_nullified_by` |
-| `history::nullifier_non_inclusion::prove_nullifier_non_inclusion` | `history::nullifier::assert_nullifier_did_not_exist_by` |
-| `history::nullifier_non_inclusion::prove_note_not_nullified` | `history::note::assert_note_was_not_nullified_by` |
-| `history::contract_inclusion::prove_contract_deployment` | `history::deployment::assert_contract_bytecode_was_published_by` |
-| `history::contract_inclusion::prove_contract_non_deployment` | `history::deployment::assert_contract_bytecode_was_not_published_by` |
-| `history::contract_inclusion::prove_contract_initialization` | `history::deployment::assert_contract_was_initialized_by` |
-| `history::contract_inclusion::prove_contract_non_initialization` | `history::deployment::assert_contract_was_not_initialized_by` |
-| `history::public_storage::public_storage_historical_read` | `history::storage::public_storage_historical_read` |
+| Old (trait method)                                                | New (standalone function)                                            |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `history::note_inclusion::prove_note_inclusion`                   | `history::note::assert_note_existed_by`                              |
+| `history::note_validity::prove_note_validity`                     | `history::note::assert_note_was_valid_by`                            |
+| `history::nullifier_inclusion::prove_nullifier_inclusion`         | `history::nullifier::assert_nullifier_existed_by`                    |
+| `history::nullifier_inclusion::prove_note_is_nullified`           | `history::note::assert_note_was_nullified_by`                        |
+| `history::nullifier_non_inclusion::prove_nullifier_non_inclusion` | `history::nullifier::assert_nullifier_did_not_exist_by`              |
+| `history::nullifier_non_inclusion::prove_note_not_nullified`      | `history::note::assert_note_was_not_nullified_by`                    |
+| `history::contract_inclusion::prove_contract_deployment`          | `history::deployment::assert_contract_bytecode_was_published_by`     |
+| `history::contract_inclusion::prove_contract_non_deployment`      | `history::deployment::assert_contract_bytecode_was_not_published_by` |
+| `history::contract_inclusion::prove_contract_initialization`      | `history::deployment::assert_contract_was_initialized_by`            |
+| `history::contract_inclusion::prove_contract_non_initialization`  | `history::deployment::assert_contract_was_not_initialized_by`        |
+| `history::public_storage::public_storage_historical_read`         | `history::storage::public_storage_historical_read`                   |
 
 ### [Aztec.js] Transaction sending API redesign
 
@@ -1841,7 +1874,7 @@ We have decided to drop auto-derivation of `Packable` from the `#[note]` macro b
 With this change you will be forced to either apply `#[derive(Packable)` on your notes:
 
 ```diff
-+use aztec::protocol_types::traits::Packable;
++use aztec::protocol::traits::Packable;
 
 +#[derive(Packable)]
 #[note]
@@ -2072,7 +2105,7 @@ Instead of importing common types from `dep::aztec::prelude...`, you'll now need
 The Noir Language Server vscode extension is now capable of autocompleting imports: just type some of the import and press 'tab' when it pops up with the correct item, and the import will be inserted at the top of the file.
 
 As a quick reference, here are the paths to the types that were previously in the `prelude`.
-So, for example, if you were previously using `dep::aztec::prelude::AztecAddress`, you'll need to replace it with `dep::aztec::protocol_types::address::AztecAddress`.
+So, for example, if you were previously using `dep::aztec::prelude::AztecAddress`, you'll need to replace it with `dep::aztec::protocol::address::AztecAddress`.
 Apologies for any pain this brings. The reasoning is that these types were somewhat arbitrary, and it was unclear which types were worthy enough to be included here.
 
 ```rust
@@ -2091,7 +2124,7 @@ use dep::aztec::{
     },
 };
 
-use dep::aztec::protocol_types::{
+use dep::aztec::protocol::{
     abis::function_selector::FunctionSelector,
     address::{AztecAddress, EthAddress},
     point::Point,
@@ -2619,15 +2652,15 @@ If you have no need for a custom implementation of the `compute_note_hash` funct
 
 ```
 fn compute_note_hash(self, storage_slot: Field) -> Field {
-    let inputs = aztec::protocol_types::utils::arrays::array_concat(self.pack(), [storage_slot]);
-    aztec::protocol_types::hash::poseidon2_hash_with_separator(inputs, aztec::protocol_types::constants::DOM_SEP__NOTE_HASH)
+    let inputs = aztec::protocol::utils::arrays::array_concat(self.pack(), [storage_slot]);
+    aztec::protocol::hash::poseidon2_hash_with_separator(inputs, aztec::protocol::constants::DOM_SEP__NOTE_HASH)
 }
 ```
 
 If you need to keep the custom implementation of the packing functionality, manually implement the `Packable` trait:
 
 ```diff
-+ use dep::aztec::protocol_types::traits::Packable;
++ use dep::aztec::protocol::traits::Packable;
 
 +impl Packable<N> for YourNote {
 +    fn pack(self) -> [Field; N] {
@@ -4517,7 +4550,7 @@ A new `prelude` module to include common Aztec modules and types.
 This simplifies dependency syntax. For example:
 
 ```rust
-use dep::aztec::protocol_types::address::AztecAddress;
+use dep::aztec::protocol::address::AztecAddress;
 use dep::aztec::{
     context::{PrivateContext, Context}, note::{note_header::NoteHeader, utils as note_utils},
     state_vars::Map
@@ -4865,7 +4898,7 @@ struct Storage {
 For this to work, Notes must implement Serialize, Deserialize and NoteInterface Traits. Previously:
 
 ```rust
-use dep::aztec::protocol_types::address::AztecAddress;
+use dep::aztec::protocol::address::AztecAddress;
 use dep::aztec::{
     note::{
         note_header::NoteHeader,
@@ -5006,7 +5039,7 @@ use dep::aztec::{
     log::emit_encrypted_log,
     hash::pedersen_hash,
     context::PrivateContext,
-    protocol_types::{
+    protocol::{
         address::AztecAddress,
         traits::{Serialize, Deserialize, Empty}
     }
@@ -5168,9 +5201,9 @@ impl Storage {
 
 ## 0.18.0
 
-### [Aztec.nr] Remove `protocol_types` from Nargo.toml
+### [Aztec.nr] Remove `protocol` from Nargo.toml
 
-The `protocol_types` package is now being reexported from `aztec`. It can be accessed through `dep::aztec::protocol_types`.
+The `protocol` package is now being reexported from `aztec`. It can be accessed through `dep::aztec::protocol`.
 
 ```toml
 aztec = { git="https://github.com/AztecProtocol/aztec-packages/", tag="#include_aztec_version", directory="yarn-project/aztec-nr/aztec" }
@@ -5260,11 +5293,11 @@ Now:
 const tokenBigInt = (await bridge.methods.token().simulate()).inner;
 ```
 
-### [Aztec.nr] Add `protocol_types` to Nargo.toml
+### [Aztec.nr] Add `protocol` to Nargo.toml
 
 ```toml
 aztec = { git="https://github.com/AztecProtocol/aztec-packages/", tag="#include_aztec_version", directory="yarn-project/aztec-nr/aztec" }
-protocol_types = { git="https://github.com/AztecProtocol/aztec-packages/", tag="#include_aztec_version", directory="yarn-project/noir-protocol-circuits/crates/types"}
+protocol = { git="https://github.com/AztecProtocol/aztec-packages/", tag="#include_aztec_version", directory="yarn-project/noir-protocol-circuits/crates/types"}
 ```
 
 ### [Aztec.nr] moving compute_address func to AztecAddress

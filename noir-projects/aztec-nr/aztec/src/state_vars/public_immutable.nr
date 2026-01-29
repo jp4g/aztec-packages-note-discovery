@@ -1,12 +1,15 @@
 use crate::{
     context::{PrivateContext, PublicContext, UtilityContext},
+    nullifier::utils::compute_nullifier_existence_request,
+    oracle::nullifiers::check_nullifier_exists,
     state_vars::StateVariable,
     utils::WithHash,
 };
-use protocol_types::{
-    constants::DOM_SEP__INITIALIZATION_NULLIFIER, hash::poseidon2_hash_with_separator,
-    traits::Packable,
+use crate::protocol::{
+    constants::DOM_SEP__INITIALIZATION_NULLIFIER, hash::poseidon2_hash_with_separator, traits::Packable,
 };
+
+mod test;
 
 /// Immutable public values.
 ///
@@ -18,24 +21,25 @@ use protocol_types::{
 ///
 /// Unlike Solidity's `immutable` or `constant`, a `PublicImmutable`'s initialization does not need to occur during
 /// contract initialization - it can happen at any point in time (but only once). This also makes it possible to have a
-/// [Map](crate::state_vars::Map) of `PublicImmutable`s.
+/// [`Map`](crate::state_vars::Map) of `PublicImmutable`s.
 ///
 /// ## Access Patterns
 ///
 /// A value stored in a `PublicImmutable` can be read and initialized from public contract functions.
 ///
-/// Unlike [PublicMutable](crate::state_vars::PublicMutable) it is **also** possible to read a `PublicImmutable` from a
+/// Unlike [`PublicMutable`](crate::state_vars::PublicMutable) it is **also** possible to read a `PublicImmutable` from
+/// a
 /// private contract function, though it is not possible to initialize one. A common pattern is to have these functions
 /// [enqueue a public self calls](crate::contract_self::ContractSelf::enqueue_self) in which the initialization
 /// operation is performed.
 ///
 /// For a mutable (with restrictions) variant which also can be read from private functions see
-/// [DelayedPublicMutable](crate::state_vars::DelayedPublicMutable).
+/// [`DelayedPublicMutable`](crate::state_vars::DelayedPublicMutable).
 ///
 /// ## Privacy
 ///
-/// `PublicImmutable` provides zero privacy in terms of the value stored and any public accesses: the entire network can
-/// see these and the data involved.
+/// `PublicImmutable` provides zero privacy in terms of the value stored and any public accesses: the entire network
+/// can see these and the data involved.
 ///
 /// Reading a `PublicImmutable` from a private contract function however is completely private, and leaks zero
 /// information about the fact that the value was read.
@@ -45,16 +49,17 @@ use protocol_types::{
 /// This is suitable for any kind of fixed global configuration that needs to be accessible by private contract
 /// functions, such as token decimals, related contracts in a multi-contract configuration, etc.
 ///
-/// It is also useful for fixed per-user configuration by combining it with a [Map](crate::state_vars::Map), e.g. a
+/// It is also useful for fixed per-user configuration by combining it with a [`Map`](crate::state_vars::Map), e.g. a
 /// registry of their account types.
 ///
 /// `PublicImmutable`'s main limitation is the immutability, which in many cases leads to
-/// [DelayedPublicMutable](crate::state_vars::DelayedPublicMutable) being used instead. But in those cases where fixed
+/// [`DelayedPublicMutable`](crate::state_vars::DelayedPublicMutable) being used instead. But in those cases where
+/// fixed
 /// values are not a problem, this is a fine choice for storage.
 ///
 /// ## Examples
 ///
-/// Declaring a `PublicImmutable` in the the contract's [storage](crate::macros::storage::storage) struct requires
+/// Declaring a `PublicImmutable` in the the contract's [`storage`](crate::macros::storage::storage) struct requires
 /// specifying the type `T` that is stored in the variable:
 ///
 /// ```noir
@@ -73,15 +78,15 @@ use protocol_types::{
 /// ## Implementation Details
 ///
 /// Values are packed and stored directly in the public storage tree, along with the hash of the packed representation.
-/// A `PublicImmutable` therefore takes up as many storage slots as the packing length of the stored type `T`, plus one.
-/// This hash allows for efficient private reads, such that only a single public storage value is read. For more
-/// details, see [WithHash](crate::utils::WithHash).
+/// A `PublicImmutable` therefore takes up as many storage slots as the packing length of the stored type `T`, plus
+/// one. This hash allows for efficient private reads, such that only a single public storage value is read. For more
+/// details, see [`WithHash`](crate::utils::WithHash).
 ///
 /// An initialization nullifier prevents re-initialization of the `PublicImmutable`. This allows reading an initialized
 /// `PublicImmutable` from a private contract function, since the value is guaranteed to not change.
 ///
-/// Private contract functions however **cannot** determine that a `PublicImmutable` has not been initialized, as they do
-/// not have access to the current network state, only the _past_ state at the anchor block. They _can_ perform
+/// Private contract functions however **cannot** determine that a `PublicImmutable` has not been initialized, as they
+/// do not have access to the current network state, only the _past_ state at the anchor block. They _can_ perform
 /// historical non-inclusion proofs of the initialization nullifier at past times, but they have no way to guarantee
 /// that it has not been emitted since then.
 pub struct PublicImmutable<T, Context> {
@@ -146,8 +151,8 @@ impl<T> PublicImmutable<T, PublicContext> {
     where
         T: Packable + Eq,
     {
-        // We emit an initialization nullifier to indicate that the struct is initialized. This also prevents
-        // the value from being initialized again as each nullifier can be emitted only once.
+        // We emit an initialization nullifier to indicate that the struct is initialized. This also prevents the value
+        // from being initialized again as each nullifier can be emitted only once.
         let nullifier = self.compute_initialization_inner_nullifier();
         self.context.push_nullifier(nullifier);
 
@@ -170,8 +175,8 @@ impl<T> PublicImmutable<T, PublicContext> {
     ///
     /// ## Cost
     ///
-    /// The `SLOAD` AVM opcode is invoked a number of times equal to `T`'s packed length, and the
-    /// `NULLIFIEREXISTS` AVM opcode is invoked once.
+    /// The `SLOAD` AVM opcode is invoked a number of times equal to `T`'s packed length, and the `NULLIFIEREXISTS` AVM
+    /// opcode is invoked once.
     pub fn read(self) -> T
     where
         T: Packable + Eq,
@@ -182,8 +187,8 @@ impl<T> PublicImmutable<T, PublicContext> {
 
     /// Reads the permanent value, skipping the initialization check.
     ///
-    /// This is cheaper than [PublicImmutable::read], but it should only be used if the `PublicImmutable` is known to be
-    /// initialized.
+    /// This is cheaper than [`PublicImmutable::read`], but it should only be used if the `PublicImmutable` is known to
+    /// be initialized.
     ///
     /// If the `PublicImmutable` is not initialized, this returns the default empty public storage value, which is all
     /// zeroes - equivalent to `let t = T::unpack(std::mem::zeroed());`.
@@ -254,8 +259,14 @@ impl<T> PublicImmutable<T, UtilityContext> {
     where
         T: Packable + Eq,
     {
-        // TODO(#15703): this fn should fail if the variable is not initialized
+        assert(self.is_initialized(), "Trying to read from uninitialized PublicImmutable");
         WithHash::utility_public_storage_read(self.context, self.storage_slot)
+    }
+
+    /// Returns true if the `PublicImmutable` has been initialized.
+    pub unconstrained fn is_initialized(self) -> bool {
+        let nullifier = self.compute_initialization_inner_nullifier();
+        check_nullifier_exists(nullifier)
     }
 }
 
@@ -275,9 +286,12 @@ impl<T> PublicImmutable<T, &mut PrivateContext> {
     ///
     /// ## Cost
     ///
-    /// A historical public storage read at the anchor block is performed for a single storage slot, **regardless of
-    /// `T`'s packed length**. This is because [PublicImmutable::initialize] stores not just the value but also its
-    /// hash: this function obtains the preimage from an oracle and proves that it matches the hash from public storage.
+    /// A nullifier existence request is pushed to the context, which will be verified by the kernel circuit.
+    /// Additionally, a historical public storage read at the anchor block is performed for a single storage slot,
+    /// **regardless of `T`'s packed length**. This is because [`PublicImmutable::initialize`] stores not just the
+    /// value
+    /// but also its hash: this function obtains the preimage from an oracle and proves that it matches the hash from
+    /// public storage.
     ///
     /// Because of this reason it is convenient to group together all of a contract's public immutable values that are
     /// read privately in a single type `T`:
@@ -306,7 +320,17 @@ impl<T> PublicImmutable<T, &mut PrivateContext> {
     where
         T: Packable + Eq,
     {
-        // TODO(#15703): this fn should fail if the variable is not initialized
+        let nullifier = self.compute_initialization_inner_nullifier();
+
+        // Safety: We use this check to be able to test this function works properly on synthetic envs
+        // like TXE. We assert the returned value only to provide a clear error message. The actual
+        // constrained check that the nullifier exists is done below with `assert_nullifier_exists`
+        // We should improve our synthetic envs because this check forces an unnecesary roundtrip
+        let nullifier_exists = unsafe { check_nullifier_exists(nullifier) };
+        assert(nullifier_exists, "Trying to read from uninitialized PublicImmutable");
+
+        let nullifier_existence_request = compute_nullifier_existence_request(nullifier, self.context.this_address());
+        self.context.assert_nullifier_exists(nullifier_existence_request);
         WithHash::historical_public_storage_read(
             self.context.get_anchor_block_header(),
             self.context.this_address(),
