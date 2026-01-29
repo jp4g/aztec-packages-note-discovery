@@ -33,43 +33,32 @@ flowchart TD
     WantPublic -->|Yes| InstanceDeployed{Is the instance<br/>publicly deployed?}
     WantPublic -->|No| WantPrivate{Do you want to call<br/>a private function?}
 
-    InstanceDeployed -->|Yes| CheckInit1{Is the contract<br/>initialized?}
+    InstanceDeployed -->|Yes| CheckInit{Is the contract<br/>initialized?}
     InstanceDeployed -->|No| ClassRegistered{Is the class<br/>registered?}
 
     ClassRegistered -->|Yes| NeedInstance[Register the instance via<br/>ContractInstanceRegistry]
     ClassRegistered -->|No| NeedClass[Register the class via<br/>ContractClassRegistry first]
     NeedClass --> NeedInstance
-    NeedInstance --> CheckInit1
+    NeedInstance --> CheckInit
 
-    WantPrivate -->|Yes| CheckInit2{Is the contract<br/>initialized?}
+    WantPrivate -->|Yes| CheckInit
+    PrivateOnly --> CheckInit
 
-    PrivateOnly --> CheckInit3{Is the contract<br/>initialized?}
+    CheckInit -->|Yes| Ready([Ready to call your function])
+    CheckInit -->|No| HasInitializer{"Does your function have<br/>noinitcheck?"}
 
-    CheckInit1 -->|Yes| ReadyPublic([Ready to call public functions])
-    CheckInit1 -->|No| HasInitializer1{"Does your function have<br/>noinitcheck?"}
-
-    CheckInit2 -->|Yes| ReadyPrivate([Ready to call private functions])
-    CheckInit2 -->|No| HasInitializer2{"Does your function have<br/>noinitcheck?"}
-
-    CheckInit3 -->|Yes| ReadyPrivate2([Ready to call private functions])
-    CheckInit3 -->|No| HasInitializer3{"Does your function have<br/>noinitcheck?"}
-
-    HasInitializer1 -->|Yes| ReadyNoInit1([Call it! No init check needed])
-    HasInitializer1 -->|No| MustInit1[Must be initialized]
-    MustInit1 --> ReadyPublic
-
-    HasInitializer2 -->|Yes| ReadyNoInit2([Call it! No init check needed])
-    HasInitializer2 -->|No| MustInit2[Must be initialized]
-    MustInit2 --> ReadyPrivate
-
-    HasInitializer3 -->|Yes| ReadyNoInit3([Call it! No init check needed])
-    HasInitializer3 -->|No| MustInit3[Must be initialized]
-    MustInit3 --> ReadyPrivate2
+    HasInitializer -->|Yes| ReadyNoInit([Call it! No init check needed])
+    HasInitializer -->|No| MustInit[Initialize the contract first]
+    MustInit --> Ready
 ```
 
 :::tip No initializer?
 If your contract has no `#[initializer]` function and was deployed with `without_initializer()`, it's considered initialized immediately. Skip the initialization checks above.
 :::
+
+## Checking Contract State Programmatically
+
+Use `wallet.getContractMetadata(contractAddress)` to check whether a contract is registered, published, and initialized. See [Verify deployment](../aztec-js/how_to_deploy_contract.md#verify-deployment) for usage examples and details on what the PXE checks automatically versus what you need to verify manually.
 
 ## The Contract Lifecycle States
 
