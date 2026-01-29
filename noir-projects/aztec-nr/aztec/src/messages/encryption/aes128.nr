@@ -95,9 +95,9 @@ fn extract_many_close_to_uniformly_random_256_bits_from_ecdh_shared_secret_using
     std::static_assert(N < 256, "N too large");
     for k in 0..N {
         // We augment the domain separator with the loop index, so that we can generate N lots of randomness.
-        let k_shift = (k as u16 << 8);
-        let separator_1 = k_shift + DOM_SEP__SYMMETRIC_KEY as u16;
-        let separator_2 = k_shift + DOM_SEP__SYMMETRIC_KEY_2 as u16;
+        let k_shift = (k << 8);
+        let separator_1 = k_shift + DOM_SEP__SYMMETRIC_KEY;
+        let separator_2 = k_shift + DOM_SEP__SYMMETRIC_KEY_2;
 
         let rand1: Field = poseidon2_hash_with_separator([shared_secret.x, shared_secret.y], separator_1);
         let rand2: Field = poseidon2_hash_with_separator([shared_secret.x, shared_secret.y], separator_2);
@@ -384,7 +384,7 @@ impl MessageEncryption for AES128 {
 }
 
 /// Produces a random valid address point, i.e. one that is on the curve. This is equivalent to calling
-/// [AztecAddress::to_address_point] on a random valid address.
+/// [`AztecAddress::to_address_point`] on a random valid address.
 unconstrained fn random_address_point() -> AddressPoint {
     let mut result = std::mem::zeroed();
 
