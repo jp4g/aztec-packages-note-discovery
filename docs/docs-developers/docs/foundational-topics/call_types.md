@@ -197,8 +197,6 @@ There are two main ways to execute an Aztec contract function using the `aztec.j
 
 This is used to get a result out of an execution, either private or public. It creates no transaction and spends no gas. The mental model is fairly close to that of [`eth_call`](#eth_call), in that it can be used to call any type of function, simulate its execution and get a result out of it. `simulate` is also the only way to run [utility functions](#utility).
 
-#include_code public_getter /noir-projects/noir-contracts/contracts/app/auth_contract/src/main.nr rust
-
 #include_code simulate_function yarn-project/end-to-end/src/composed/docs_examples.test.ts typescript
 
 :::warning
