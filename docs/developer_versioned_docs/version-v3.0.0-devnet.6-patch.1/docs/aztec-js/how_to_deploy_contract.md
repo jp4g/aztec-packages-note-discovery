@@ -273,6 +273,8 @@ metadata.isContractPublished               // Instance registered on the network
 metadata.isContractInitialized             // Constructor has been called?
 ```
 
+For a complete overview of what these states mean and when functions become callable, see [Contract Readiness States](../aztec-nr/contract_readiness_states.md).
+
 ### What the PXE checks automatically
 
 When you simulate or send a transaction, the PXE automatically verifies:

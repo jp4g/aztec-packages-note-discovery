@@ -262,6 +262,8 @@ metadata.isContractPublished               // Instance registered on the network
 metadata.isContractInitialized             // Constructor has been called?
 ```
 
+For a complete overview of what these states mean and when functions become callable, see [Contract Readiness States](../aztec-nr/contract_readiness_states.md).
+
 Here's a complete example:
 
 #include_code verify_deployment yarn-project/end-to-end/src/e2e_deploy_contract/deploy_method.test.ts typescript
