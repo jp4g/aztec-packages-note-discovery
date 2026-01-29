@@ -21,9 +21,8 @@ import times from 'lodash.times';
 
 import type { ContractArtifact } from '../abi/abi.js';
 import { AztecAddress } from '../aztec-address/index.js';
-import { CheckpointedL2Block } from '../block/checkpointed_l2_block.js';
 import type { DataInBlock } from '../block/in_block.js';
-import { type BlockParameter, CommitteeAttestation, L2BlockHash, L2BlockNew } from '../block/index.js';
+import { BlockHash, type BlockParameter, CommitteeAttestation, L2Block } from '../block/index.js';
 import type { L2Tips } from '../block/l2_block_source.js';
 import { Checkpoint } from '../checkpoint/checkpoint.js';
 import { L1PublishedData, PublishedCheckpoint } from '../checkpoint/published_checkpoint.js';
@@ -110,10 +109,7 @@ describe('AztecNodeApiSchema', () => {
       Fr.random(),
       Fr.random(),
     ]);
-    expect(response).toEqual([
-      { data: 1n, l2BlockNumber: 1, l2BlockHash: L2BlockHash.fromNumber(BlockNumber(1)) },
-      undefined,
-    ]);
+    expect(response).toEqual([{ data: 1n, l2BlockNumber: 1, l2BlockHash: new BlockHash(new Fr(1)) }, undefined]);
 
     await expect(
       context.client.findLeavesIndexes(BlockNumber(1), MerkleTreeId.ARCHIVE, times(MAX_RPC_LEN + 1, Fr.random)),
@@ -191,21 +187,21 @@ describe('AztecNodeApiSchema', () => {
 
   it('getBlock', async () => {
     const response = await context.client.getBlock(BlockNumber(1));
-    expect(response).toBeInstanceOf(L2BlockNew);
+    expect(response).toBeInstanceOf(L2Block);
   });
 
   it('getBlockByHash', async () => {
-    const response = await context.client.getBlockByHash(Fr.random());
-    expect(response).toBeInstanceOf(L2BlockNew);
+    const response = await context.client.getBlockByHash(BlockHash.random());
+    expect(response).toBeInstanceOf(L2Block);
   });
 
   it('getBlockByArchive', async () => {
     const response = await context.client.getBlockByArchive(Fr.random());
-    expect(response).toBeInstanceOf(L2BlockNew);
+    expect(response).toBeInstanceOf(L2Block);
   });
 
   it('getBlockHeader', async () => {
-    const response = await context.client.getBlockHeader(L2BlockHash.fromField(Fr.random()));
+    const response = await context.client.getBlockHeader(new BlockHash(Fr.random()));
     expect(response).toBeInstanceOf(BlockHeader);
   });
 
@@ -234,6 +230,11 @@ describe('AztecNodeApiSchema', () => {
     expect(response).toBe(BlockNumber(1));
   });
 
+  it('getCheckpointedBlockNumber', async () => {
+    const response = await context.client.getCheckpointedBlockNumber();
+    expect(response).toBe(BlockNumber(1));
+  });
+
   it('isReady', async () => {
     const response = await context.client.isReady();
     expect(response).toBe(true);
@@ -255,7 +256,7 @@ describe('AztecNodeApiSchema', () => {
   it('getBlocks', async () => {
     const response = await context.client.getBlocks(BlockNumber(1), BlockNumber(1));
     expect(response).toHaveLength(1);
-    expect(response[0]).toBeInstanceOf(L2BlockNew);
+    expect(response[0]).toBeInstanceOf(L2Block);
 
     await expect(context.client.getBlocks(-1 as BlockNumber, BlockNumber(1))).rejects.toThrow();
     await expect(context.client.getBlocks(BlockNumber.ZERO, BlockNumber(1))).rejects.toThrow();
@@ -263,26 +264,8 @@ describe('AztecNodeApiSchema', () => {
     await expect(context.client.getBlocks(BlockNumber(1), MAX_RPC_LEN + 1)).rejects.toThrow();
   });
 
-  it('getL2BlocksNew', async () => {
-    const response = await context.client.getL2BlocksNew(BlockNumber(1), BlockNumber(1));
-    expect(response).toHaveLength(1);
-    expect(response[0]).toBeInstanceOf(L2BlockNew);
-
-    await expect(context.client.getBlocks(BlockNumber.ZERO, BlockNumber(1))).rejects.toThrow();
-    await expect(context.client.getBlocks(BlockNumber(1), BlockNumber.ZERO)).rejects.toThrow();
-    await expect(context.client.getBlocks(BlockNumber(1), MAX_RPC_LEN + 1)).rejects.toThrow();
-  });
-
-  it('getPublishedBlocks', async () => {
-    const response = await context.client.getPublishedBlocks(BlockNumber(1), BlockNumber(1));
-    expect(response).toHaveLength(1);
-    expect(response[0].block.constructor.name).toEqual('L2BlockNew');
-    expect(response[0].attestations[0]).toBeInstanceOf(CommitteeAttestation);
-    expect(response[0].l1).toBeDefined();
-  });
-
-  it('getPublishedCheckpoints', async () => {
-    const response = await context.client.getPublishedCheckpoints(CheckpointNumber(1), 1);
+  it('getCheckpoints', async () => {
+    const response = await context.client.getCheckpoints(CheckpointNumber(1), 1);
     expect(response).toHaveLength(1);
     expect(response[0]).toBeInstanceOf(PublishedCheckpoint);
   });
@@ -571,12 +554,7 @@ class MockAztecNode implements AztecNode {
     });
   }
 
-  async getL2BlocksNew(from: BlockNumber, _1: number, _2?: boolean): Promise<L2BlockNew[]> {
-    const block = await L2BlockNew.random(from);
-    return [block];
-  }
-
-  getCheckpointedBlocks(_from: BlockNumber, _limit: number, _proven?: boolean) {
+  getCheckpointedBlocks(_from: BlockNumber, _limit: number) {
     return Promise.resolve([]);
   }
 
@@ -590,7 +568,7 @@ class MockAztecNode implements AztecNode {
     expect(leafValues[0]).toBeInstanceOf(Fr);
     expect(leafValues[1]).toBeInstanceOf(Fr);
     return Promise.resolve([
-      { data: 1n, l2BlockNumber: BlockNumber(1), l2BlockHash: L2BlockHash.fromNumber(BlockNumber(1)) },
+      { data: 1n, l2BlockNumber: BlockNumber(1), l2BlockHash: new BlockHash(new Fr(1)) },
       undefined,
     ]);
   }
@@ -681,15 +659,15 @@ class MockAztecNode implements AztecNode {
     expect(leafSlot).toBeInstanceOf(Fr);
     return Promise.resolve(PublicDataWitness.random());
   }
-  getBlock(number: BlockParameter): Promise<L2BlockNew | undefined> {
+  getBlock(number: BlockParameter): Promise<L2Block | undefined> {
     const blockNum = number === 'latest' ? BlockNumber(1) : (number as BlockNumber);
-    return L2BlockNew.random(blockNum);
+    return L2Block.random(blockNum);
   }
-  getBlockByHash(_blockHash: Fr): Promise<L2BlockNew | undefined> {
-    return L2BlockNew.random(BlockNumber(1));
+  getBlockByHash(_blockHash: BlockHash): Promise<L2Block | undefined> {
+    return L2Block.random(BlockNumber(1));
   }
-  getBlockByArchive(_archive: Fr): Promise<L2BlockNew | undefined> {
-    return L2BlockNew.random(BlockNumber(1));
+  getBlockByArchive(_archive: Fr): Promise<L2Block | undefined> {
+    return L2Block.random(BlockNumber(1));
   }
   getBlockHeaderByArchive(_archive: Fr): Promise<BlockHeader | undefined> {
     return Promise.resolve(BlockHeader.empty());
@@ -704,6 +682,9 @@ class MockAztecNode implements AztecNode {
     return Promise.resolve(BlockNumber(1));
   }
   getProvenBlockNumber(): Promise<BlockNumber> {
+    return Promise.resolve(BlockNumber(1));
+  }
+  getCheckpointedBlockNumber(): Promise<BlockNumber> {
     return Promise.resolve(BlockNumber(1));
   }
   isReady(): Promise<boolean> {
@@ -724,24 +705,14 @@ class MockAztecNode implements AztecNode {
       protocolContractAddresses: Object.fromEntries(protocolContracts) as ProtocolContractAddresses,
     };
   }
-  getBlocks(from: number, limit: number): Promise<L2BlockNew[]> {
+  getBlocks(from: number, limit: number): Promise<L2Block[]> {
     return Promise.all(
       Array(limit)
         .fill(0)
-        .map(i => L2BlockNew.random(BlockNumber(from + i))),
+        .map(i => L2Block.random(BlockNumber(from + i))),
     );
   }
-  getPublishedBlocks(from: number, limit: number): Promise<CheckpointedL2Block[]> {
-    return timesAsync(limit, async i =>
-      CheckpointedL2Block.fromFields({
-        checkpointNumber: CheckpointNumber(from + i),
-        block: await L2BlockNew.random(BlockNumber(from + i)),
-        attestations: [CommitteeAttestation.random()],
-        l1: new L1PublishedData(1n, 1n, Buffer32.random().toString()),
-      }),
-    );
-  }
-  getPublishedCheckpoints(from: CheckpointNumber, limit: number): Promise<PublishedCheckpoint[]> {
+  getCheckpoints(from: CheckpointNumber, limit: number): Promise<PublishedCheckpoint[]> {
     return timesAsync(limit, async i =>
       PublishedCheckpoint.from({
         checkpoint: await Checkpoint.random(CheckpointNumber(from + i)),
@@ -810,7 +781,7 @@ class MockAztecNode implements AztecNode {
     expect(txHash).toBeInstanceOf(TxHash);
     return {
       l2BlockNumber: BlockNumber(1),
-      l2BlockHash: L2BlockHash.fromNumber(0x12),
+      l2BlockHash: new BlockHash(new Fr(0x12)),
       data: await TxEffect.random(),
       txIndexInBlock: randomInt(10),
     };
