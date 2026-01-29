@@ -24,6 +24,7 @@ Not every contract needs every state. A private-only contract can skip class reg
 Use this decision tree to determine which steps your contract needs.
 
 ```mermaid
+%%{init: {'themeVariables': {'fontSize': '10px'}}}%%
 flowchart TD
     Start([I want to call a function on my contract]) --> HasPublic{Does your contract<br/>have public functions?}
 
