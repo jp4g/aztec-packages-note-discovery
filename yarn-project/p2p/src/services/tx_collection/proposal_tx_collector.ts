@@ -1,6 +1,5 @@
 import type { Logger } from '@aztec/foundation/log';
 import type { DateProvider } from '@aztec/foundation/timer';
-import type { BlockProposal } from '@aztec/stdlib/p2p';
 import type { Tx, TxHash } from '@aztec/stdlib/tx';
 
 import type { PeerId } from '@libp2p/interface';
@@ -10,24 +9,25 @@ import type { BatchTxRequesterConfig } from '../reqresp/batch-tx-requester/confi
 import type { BatchTxRequesterLibP2PService } from '../reqresp/batch-tx-requester/interface.js';
 import type { IBatchRequestTxValidator } from '../reqresp/batch-tx-requester/tx_validator.js';
 import { ReqRespSubProtocol } from '../reqresp/interface.js';
+import type { BlockTxsSource } from '../reqresp/protocols/block_txs/block_txs_reqresp.js';
 import { chunkTxHashesRequest } from '../reqresp/protocols/tx.js';
 
 /**
  * Strategy interface for collecting transactions for block proposals.
  * Allows swapping between different tx collection implementations for benchmarking.
  */
-export interface ProposalTxCollector {
+export interface MissingTxsCollector {
   /**
    * Collect transactions for a block proposal.
    * @param txHashes - The transaction hashes to collect
-   * @param blockProposal - The block proposal containing the transactions
+   * @param blockTxsSource - The block or proposal containing the transactions
    * @param pinnedPeer - Optional peer that sent the proposal (expected to have all txs)
    * @param timeoutMs - Timeout in milliseconds
    * @returns The collected transactions
    */
   collectTxs(
     txHashes: TxHash[],
-    blockProposal: BlockProposal,
+    blockTxsSource: BlockTxsSource,
     pinnedPeer: PeerId | undefined,
     timeoutMs: number,
   ): Promise<Tx[]>;
@@ -37,7 +37,7 @@ export interface ProposalTxCollector {
  * Collects transactions using the BatchTxRequester implementation.
  * This uses a smart/dumb peer strategy with parallel workers.
  */
-export class BatchTxRequesterCollector implements ProposalTxCollector {
+export class BatchTxRequesterCollector implements MissingTxsCollector {
   constructor(
     private p2pService: BatchTxRequesterLibP2PService,
     private log: Logger,
@@ -48,7 +48,7 @@ export class BatchTxRequesterCollector implements ProposalTxCollector {
 
   async collectTxs(
     txHashes: TxHash[],
-    blockProposal: BlockProposal,
+    blockTxsSource: BlockTxsSource,
     pinnedPeer: PeerId | undefined,
     timeoutMs: number,
   ): Promise<Tx[]> {
@@ -61,7 +61,7 @@ export class BatchTxRequesterCollector implements ProposalTxCollector {
 
     const batchRequester = new BatchTxRequester(
       txHashes,
-      blockProposal,
+      blockTxsSource,
       pinnedPeer,
       timeoutMs,
       this.p2pService,
@@ -87,7 +87,7 @@ const DEFAULT_MAX_RETRY_ATTEMPTS = 3;
  * Collects transactions using the sendBatchRequest implementation from ReqResp.
  * This is the original implementation that balances requests across peers.
  */
-export class SendBatchRequestCollector implements ProposalTxCollector {
+export class SendBatchRequestCollector implements MissingTxsCollector {
   constructor(
     private p2pService: BatchTxRequesterLibP2PService,
     private maxPeers: number = DEFAULT_MAX_PEERS,
@@ -96,7 +96,7 @@ export class SendBatchRequestCollector implements ProposalTxCollector {
 
   async collectTxs(
     txHashes: TxHash[],
-    _blockProposal: BlockProposal,
+    _blockTxsSource: BlockTxsSource,
     pinnedPeer: PeerId | undefined,
     timeoutMs: number,
   ): Promise<Tx[]> {

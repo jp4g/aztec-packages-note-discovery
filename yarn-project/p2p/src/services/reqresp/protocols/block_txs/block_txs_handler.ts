@@ -1,5 +1,5 @@
 import { Fr } from '@aztec/foundation/curves/bn254';
-import { TxArray } from '@aztec/stdlib/tx';
+import { Tx, TxArray, type TxHash } from '@aztec/stdlib/tx';
 
 import type { PeerId } from '@libp2p/interface';
 
@@ -13,10 +13,18 @@ import { BlockTxsRequest, BlockTxsResponse } from './block_txs_reqresp.js';
 /**
  * Handler for block txs requests
  * @param attestationPool - the attestation pool to check for block proposals
- * @param mempools - the mempools containing the tx pool
+ * @param txPool - the tx pool to fetch transactions from (including archive)
  * @returns the BlockTxs request handler
  */
 export function reqRespBlockTxsHandler(attestationPool: AttestationPool, txPool: TxPool): ReqRespSubProtocolHandler {
+  /** For each undefined entry in poolResults, attempts to fetch from the archive. */
+  async function fillFromArchive(txHashes: TxHash[], poolResults: (Tx | undefined)[]) {
+    const results = await Promise.all(
+      poolResults.map((tx, i) => (tx !== undefined ? tx : txPool.getArchivedTxByHash(txHashes[i]))),
+    );
+    return results;
+  }
+
   /**
    * Handler for block txs requests
    * @param msg - the block txs request message
@@ -41,7 +49,8 @@ export function reqRespBlockTxsHandler(attestationPool: AttestationPool, txPool:
     // This is scenario in which we don't have this block proposal the peer is requesting from us
     // But peer has sent requested tx hashes, so we can send them the transactions
     if (!blockProposal && requestedTxsHashes !== undefined) {
-      const responseTxs = (await txPool.getTxsByHash(requestedTxsHashes)).filter(tx => !!tx);
+      const poolResults = await txPool.getTxsByHash(requestedTxsHashes);
+      const responseTxs = (await fillFromArchive(requestedTxsHashes, poolResults)).filter(tx => !!tx);
       const response = new BlockTxsResponse(Fr.zero(), new TxArray(...responseTxs), BitVector.init(0, []));
       return response.toBuffer();
     }

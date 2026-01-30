@@ -1,9 +1,14 @@
 import { Fr } from '@aztec/foundation/curves/bn254';
 import { BufferReader, serializeToBuffer } from '@aztec/foundation/serialize';
-import type { BlockProposal } from '@aztec/stdlib/p2p';
-import { TxArray, TxHash, TxHashArray } from '@aztec/stdlib/tx';
+import { TxArray, type TxHash, TxHashArray } from '@aztec/stdlib/tx';
 
 import { BitVector } from './bitvector.js';
+
+/** Minimal interface for a block source that provides tx hashes and an archive root. */
+export interface BlockTxsSource {
+  txHashes: TxHash[];
+  archive: Fr;
+}
 
 /**
  * Request message for requesting specific transactions from a block
@@ -31,7 +36,7 @@ export class BlockTxsRequest {
    * @returns undefined if there were no missingTxHashes matching BlockProposal hashes, otherwise
    * returns new BlockTxsRequest*/
   static fromBlockProposalAndMissingTxs(
-    blockProposal: BlockProposal,
+    blockTxsSource: BlockTxsSource,
     missingTxHashes: TxHash[],
     includeFullTxHashes = false,
   ): BlockTxsRequest | undefined {
@@ -41,19 +46,19 @@ export class BlockTxsRequest {
 
     const missingHashesSet = new Set(missingTxHashes.map(t => t.toString()));
 
-    // We cannot request txs that are not part of the block proposal
-    if (!missingHashesSet.isSubsetOf(new Set(blockProposal.txHashes.map(t => t.toString())))) {
+    // We cannot request txs that are not part of the block
+    if (!missingHashesSet.isSubsetOf(new Set(blockTxsSource.txHashes.map(t => t.toString())))) {
       return undefined;
     }
 
-    const missingIndices = blockProposal.txHashes
+    const missingIndices = blockTxsSource.txHashes
       .map((hash, idx) => (missingHashesSet.has(hash.toString()) ? idx : -1))
       .filter(i => i != -1);
 
-    const requestBitVector = BitVector.init(blockProposal.txHashes.length, missingIndices);
+    const requestBitVector = BitVector.init(blockTxsSource.txHashes.length, missingIndices);
     const hashes = includeFullTxHashes ? new TxHashArray(...missingTxHashes) : new TxHashArray();
 
-    return new BlockTxsRequest(blockProposal.archive, hashes, requestBitVector);
+    return new BlockTxsRequest(blockTxsSource.archive, hashes, requestBitVector);
   }
 
   /**
