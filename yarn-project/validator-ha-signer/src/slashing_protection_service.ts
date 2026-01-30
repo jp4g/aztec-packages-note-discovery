@@ -40,6 +40,7 @@ export class SlashingProtectionService {
   private readonly maxStuckDutiesAgeMs: number;
 
   private cleanupRunningPromise: RunningPromise;
+  private lastOldDutiesCleanupAtMs?: number;
 
   constructor(
     private readonly db: SlashingProtectionDatabase,
@@ -265,14 +266,21 @@ export class SlashingProtectionService {
     }
 
     // 2. Clean up old signed duties if configured
+    // we shouldn't run this as often as stuck duty cleanup.
     if (this.config.cleanupOldDutiesAfterHours !== undefined) {
       const maxAgeMs = this.config.cleanupOldDutiesAfterHours * 60 * 60 * 1000;
-      const numOldDuties = await this.db.cleanupOldDuties(maxAgeMs);
-      if (numOldDuties > 0) {
-        this.log.verbose(`Cleaned up ${numOldDuties} old signed duties`, {
-          cleanupOldDutiesAfterHours: this.config.cleanupOldDutiesAfterHours,
-          maxAgeMs,
-        });
+      const nowMs = Date.now();
+      const shouldRun =
+        this.lastOldDutiesCleanupAtMs === undefined || nowMs - this.lastOldDutiesCleanupAtMs >= maxAgeMs;
+      if (shouldRun) {
+        const numOldDuties = await this.db.cleanupOldDuties(maxAgeMs);
+        this.lastOldDutiesCleanupAtMs = nowMs;
+        if (numOldDuties > 0) {
+          this.log.verbose(`Cleaned up ${numOldDuties} old signed duties`, {
+            cleanupOldDutiesAfterHours: this.config.cleanupOldDutiesAfterHours,
+            maxAgeMs,
+          });
+        }
       }
     }
   }
