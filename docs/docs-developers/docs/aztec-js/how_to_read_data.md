@@ -165,36 +165,7 @@ collectedEvents.forEach((ev) => {
 
 To continuously monitor for new events, poll at regular intervals while tracking the last processed block:
 
-```typescript
-import { BlockNumber } from "@aztec/foundation/branded-types";
-
-// aztecNode is from createAztecNodeClient() in the connection guide
-// TokenContract is your deployed token contract class
-let lastProcessedBlock = startBlock; // BlockNumber type
-
-async function pollForEvents() {
-  const currentBlock = await aztecNode.getBlockNumber();
-
-  if (currentBlock > lastProcessedBlock) {
-    const events = await getDecodedPublicEvents<Transfer>(
-      aztecNode,
-      TokenContract.events.Transfer,
-      lastProcessedBlock + 1,
-      currentBlock - lastProcessedBlock,
-    );
-
-    for (const event of events) {
-      // Process each event
-      console.log(`Transfer: ${event.amount} from ${event.from}`);
-    }
-
-    lastProcessedBlock = currentBlock;
-  }
-}
-
-// Poll every 10 seconds
-setInterval(pollForEvents, 10000);
-```
+#include_code poll_for_events /docs/examples/ts/aztecjs_advanced/index.ts typescript
 
 For private events, use the same pattern with `wallet.getPrivateEvents()` and update the `fromBlock` in your filter accordingly.
 

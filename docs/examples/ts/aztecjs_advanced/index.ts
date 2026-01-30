@@ -7,7 +7,7 @@ import {
   TestWallet,
   registerInitialLocalNetworkAccountsInWallet,
 } from "@aztec/test-wallet/server";
-import { TokenContract } from "@aztec/noir-contracts.js/Token";
+import { TokenContract, type Transfer } from "@aztec/noir-contracts.js/Token";
 import { SponsoredFPCContract } from "@aztec/noir-contracts.js/SponsoredFPC";
 import { Fr } from "@aztec/aztec.js/fields";
 import { NO_WAIT, BatchCall } from "@aztec/aztec.js/contracts";
@@ -188,5 +188,58 @@ console.log(`Contract 1 at: ${contracts[0].address}`);
 console.log(`Contract 2 at: ${contracts[1].address}`);
 console.log(`Contract 3 at: ${contracts[2].address}`);
 // docs:end:parallel_deploy
+
+// docs:start:skip_initialization
+// Deploy without running the constructor using skipInitialization
+const uninitializedToken = await TokenContract.deploy(
+  wallet,
+  aliceAddress,
+  "UninitToken",
+  "UNIT",
+  18,
+).send({
+  from: aliceAddress,
+  skipInitialization: true,
+});
+
+console.log(`Uninitialized contract at: ${uninitializedToken.address}`);
+
+// Initialize later by calling the constructor manually
+await uninitializedToken.methods
+  .constructor(aliceAddress, "UninitToken", "UNIT", 18)
+  .send({ from: aliceAddress });
+
+console.log("Contract initialized");
+// docs:end:skip_initialization
+
+// docs:start:poll_for_events
+import { getDecodedPublicEvents } from "@aztec/aztec.js/events";
+
+// Poll for new events at regular intervals
+let lastProcessedBlock = await node.getBlockNumber();
+
+async function pollForTransferEvents() {
+  const currentBlock = await node.getBlockNumber();
+
+  if (currentBlock > lastProcessedBlock) {
+    const events = await getDecodedPublicEvents<Transfer>(
+      node,
+      TokenContract.events.Transfer,
+      lastProcessedBlock + 1,
+      currentBlock - lastProcessedBlock,
+    );
+
+    for (const event of events) {
+      // Process each transfer event
+      console.log(`Transfer: ${event.amount} from ${event.from} to ${event.to}`);
+    }
+
+    lastProcessedBlock = currentBlock;
+  }
+}
+
+// Example: poll once (in production, use setInterval)
+await pollForTransferEvents();
+// docs:end:poll_for_events
 
 console.log("All advanced examples completed successfully");

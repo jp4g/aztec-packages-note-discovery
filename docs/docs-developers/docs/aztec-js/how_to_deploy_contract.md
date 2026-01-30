@@ -106,16 +106,7 @@ Universal deployment excludes the sender from address computation, allowing the 
 
 Deploy without running the constructor:
 
-```typescript
-// wallet and alice are from the connection guide
-const contract = await MyContract.deploy(wallet).send({
-  from: aliceAddress,
-  skipInitialization: true,
-});
-
-// Initialize later
-await contract.methods.initialize(arg1, arg2).send({ from: aliceAddress });
-```
+#include_code skip_initialization /docs/examples/ts/aztecjs_advanced/index.ts typescript
 
 ### Deploy with a specific initializer
 
