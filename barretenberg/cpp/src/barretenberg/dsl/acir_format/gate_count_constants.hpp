@@ -100,7 +100,7 @@ constexpr std::tuple<size_t, size_t> HONK_RECURSION_CONSTANTS(
         if (mode != PredicateTestCase::ConstantTrue) {
             bb::assert_failure("Unhandled mode in MegaZKRecursiveFlavor.");
         }
-        return std::make_tuple(817187, 0);
+        return std::make_tuple(824046, 0);
     } else {
         bb::assert_failure("Unhandled recursive flavor.");
     }
