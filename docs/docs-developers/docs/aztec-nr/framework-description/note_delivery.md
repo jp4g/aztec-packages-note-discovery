@@ -41,6 +41,8 @@ Aztec provides three delivery modes that offer different tradeoffs between cost,
 
 **Fully offchain delivery with no guarantees.**
 
+This method uses unconstrained encryption with offchain delivery. It must be delivered through custom offchain infrastructure (e.g., cloud storage, peer-to-peer, QR codes). The PXE cannot automatically discover these messages - the application must handle delivery.
+
 - **Use when:** The sender is incentivized to deliver correctly (e.g., sending to yourself, payment for goods/services where recipient must receive the note to complete the transaction)
 - **Costs:** Zero transaction fees, zero proving time overhead
 - **Guarantees:** None. The sender can fail to deliver or deliver incorrect content
@@ -167,7 +169,7 @@ fn transfer(amount: u128, sender: AztecAddress, recipient: AztecAddress) {
     // Subtract from sender - constrained delivery ensures recipient gets their note
     self.storage.balances.at(sender)
         .sub(amount)
-        .deliver(MessageDelivery.ONCHAIN_CONSTRAINED);
+        .deliver(MessageDelivery.ONCHAIN_UNCONSTRAINED);
 
     // Add to recipient - constrained delivery for untrusted sender
     self.storage.balances.at(recipient)
@@ -186,26 +188,6 @@ fn constructor(admin: AztecAddress) {
     // Use unconstrained delivery since we don't know if deployer is incentivized
     self.storage.admin
         .initialize(AddressNote { address: admin }, admin)
-        .deliver(MessageDelivery.ONCHAIN_CONSTRAINED);
-}
-```
-
-### Self-Transfer with Change
-
-```rust
-#[external("private")]
-fn transfer_with_change(amount: u128, from: AztecAddress, to: AztecAddress) {
-    let subtracted = self.storage.balances.at(from).try_sub(amount, 10);
-    let change = subtracted - amount;
-
-    // Change goes back to sender - use offchain delivery
-    self.storage.balances.at(from)
-        .add(change)
-        .deliver(MessageDelivery.OFFCHAIN);
-
-    // Amount goes to recipient - use constrained delivery
-    self.storage.balances.at(to)
-        .add(amount)
         .deliver(MessageDelivery.ONCHAIN_CONSTRAINED);
 }
 ```
