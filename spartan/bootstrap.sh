@@ -81,6 +81,7 @@ function network_test_cmds_1 {
 
 function network_test_cmds_2 {
   _emit_test smoke.test.ts
+  _emit_test mbps.test.ts
   _emit_test transfer.test.ts
   _emit_test slash_inactivity.test.ts
   _emit_test proving.test.ts
