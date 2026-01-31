@@ -396,49 +396,52 @@ def get_breakdown(runtime, flow_name, sha):
 @auth.login_required
 def trigger_grind():
     """Trigger a grind job for a flaky test."""
-    import hashlib
+    from urllib.parse import urlencode as url_encode
+
     full_cmd = request.args.get('cmd')
     commit = request.args.get('commit', 'HEAD')
-    confirmed = request.args.get('confirmed')
+    grind_time = request.args.get('time')  # None = show selection page
+    run_id = request.args.get('run')  # Pre-generated run_id from selection page
 
     if not full_cmd:
         return "Missing cmd parameter", 400
 
-    # Check if this grind was already requested in the last 24 hours
-    cache_key = f"grind:{hashlib.sha256(f'{full_cmd}:{commit}'.encode()).hexdigest()[:16]}"
-    existing_run_id = r.get(cache_key)
-    if existing_run_id:
-        existing_run_id = existing_run_id.decode() if isinstance(existing_run_id, bytes) else existing_run_id
-        return redirect(f'/{existing_run_id}')
+    # If run_id is provided and already has a log, redirect to it (back-button protection)
+    if run_id and r.exists(run_id):
+        return redirect(f'/{run_id}')
 
-    # Show confirmation page first
-    if not confirmed:
-        from urllib.parse import urlencode as url_encode
-        confirm_url = f"/grind?{url_encode({'cmd': full_cmd, 'commit': commit, 'confirmed': '1'})}"
-        confirm_page = (
+    # If no time selected, show selection page
+    if not grind_time:
+        # Generate one run_id for all time links on this page load
+        page_run_id = uuid.uuid4().hex[:16]
+        time_options = ['5m', '10m', '20m', '30m', '1h']
+        time_links = []
+        for t in time_options:
+            url = f"/grind?{url_encode({'cmd': full_cmd, 'commit': commit, 'time': t, 'run': page_run_id})}"
+            time_links.append(f"{YELLOW}{hyperlink(url, t)}{RESET}")
+
+        page = (
             f"{BOLD}Grind Test{RESET}\n\n"
-            f"This will start a grind run for 10 minutes.\n\n"
-            f"Command:\n{PURPLE}{full_cmd}{RESET}\n\n"
-            f"Commit: {commit}\n\n"
-            f"{YELLOW}{hyperlink(confirm_url, 'Click here to proceed.')}{RESET}\n"
+            f"Command: {full_cmd}\n\n"
+            f"Select grind duration: "
+            f"{' | '.join(time_links)}\n"
         )
-        return render_template_string(TEMPLATE, value=ansi_to_html(confirm_page), filter_str='grind', follow='top')
+        return render_template_string(TEMPLATE, value=ansi_to_html(page), filter_str='grind', follow='top')
 
-    # Generate unique run ID (16 hex chars)
-    run_id = uuid.uuid4().hex[:16]
+    # Time selected - start the grind
+    # Use run_id from URL, or generate new one if not provided
+    if not run_id:
+        run_id = uuid.uuid4().hex[:16]
 
     # Initialize the log key so redirect doesn't show "Key not found"
     r.setex(run_id, 86400, b'Starting grind...\n')
-
-    # Cache this grind request for 24 hours
-    r.setex(cache_key, 86400, run_id)
 
     # Start grind job in background
     # Dashboard server needs local repo checkout at REPO_PATH
     repo_path = os.environ.get('REPO_PATH')
     if repo_path:
         subprocess.Popen(
-            ['bash', '-c', f'cd {repo_path} && RUN_ID={run_id} ./ci.sh grind-test "{full_cmd}" {commit}'],
+            ['bash', '-c', f'cd {repo_path} && RUN_ID={run_id} ./ci.sh grind-test "{full_cmd}" {grind_time} {commit}'],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True

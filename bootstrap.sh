@@ -596,9 +596,10 @@ case "$cmd" in
     export USE_TEST_CACHE=0
 
     full_cmd="${1:?full_cmd required}"
-    commit="${2:-}"
+    timeout="${2:-}"
+    commit="${3:-}"
 
-    grind_test "$full_cmd" "$commit"
+    grind_test "$full_cmd" "$timeout" "$commit"
     ;;
 
   ##########################################

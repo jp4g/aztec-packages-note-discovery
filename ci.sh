@@ -116,7 +116,8 @@ case "$cmd" in
     ;;
   grind-test)
     full_cmd="$1"
-    commit="${2:-}"
+    timeout="${2:-}"
+    commit="${3:-}"
     # Extract test command (strip rebuild hash prefix) and hash it
     # Uses same hash as run_test_cmd's test_hash for consistency
     test_cmd="${full_cmd#* }"
@@ -124,7 +125,7 @@ case "$cmd" in
     export CI_DASHBOARD="deflake"
     export JOB_ID="grind-test-$test_hash"
     export INSTANCE_POSTFIX=$JOB_ID
-    bootstrap_ec2 "./bootstrap.sh ci-grind-test '$full_cmd' $commit" | DUP=1 cache_log "Grind test CI run" $RUN_ID
+    bootstrap_ec2 "./bootstrap.sh ci-grind-test '$full_cmd' $timeout $commit" | DUP=1 cache_log "Grind test CI run" $RUN_ID
     ;;
 
   ##########################################

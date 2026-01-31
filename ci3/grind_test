@@ -8,8 +8,9 @@ NO_CD=1 source $(git rev-parse --show-toplevel)/ci3/source
 source $ci3/source_redis
 
 full_cmd="$1"
+timeout="${2:-10m}"
 commit_tip=$(git rev-parse HEAD)
-commit="${2:-$commit_tip}"
+commit="${3:-$commit_tip}"
 jobs=$(($(nproc) * 4))
 
 # Ensure we return to the original commit on exit.
@@ -17,8 +18,6 @@ trap 'git checkout $commit_tip' EXIT
 
 # Extract test parameters (hash_prefix, test_cmd, CPUS, TIMEOUT, MAKEFILE_TARGET, etc.)
 source $ci3/source_test_params
-
-GRIND_TIMEOUT=${GRIND_TIMEOUT:-10m}
 
 function checkout {
     git reset --hard $1 --quiet
@@ -37,12 +36,12 @@ function build {
 }
 
 function grind {
-    echo "Grinding for $GRIND_TIMEOUT seconds..."
+    echo "Grinding for $timeout..."
     local par_cmd="CI=0 TRACK_TEST_FAIL=1 run_test_cmd '${hash_prefix}:NAME=test-{} ${test_cmd}'"
     local joblog=$(mktemp)
 
     # Run for full timeout, logging all results (no --halt, collect all failure data)
-    awk 'BEGIN {i=1; while (1) print i++}' | timeout $GRIND_TIMEOUT parallel --halt now,fail=10 --joblog "$joblog" -j $jobs --line-buffer "$par_cmd" || true
+    awk 'BEGIN {i=1; while (1) print i++}' | timeout $timeout parallel --halt now,fail=10 --joblog "$joblog" -j $jobs --line-buffer "$par_cmd" || true
 
     # Check if any jobs failed (column 7 is exitval in joblog)
     if awk 'NR>1 && $7!=0 {found=1} END {exit !found}' "$joblog"; then
