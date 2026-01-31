@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string, request, Response
+from flask import Flask, render_template_string, request, Response, redirect
 from flask_compress import Compress
 from flask_httpauth import HTTPBasicAuth
 import gzip
@@ -6,7 +6,9 @@ import json
 import os
 import re
 import requests
+import subprocess
 import threading
+import uuid
 from ansi2html import Ansi2HTMLConverter
 from pathlib import Path
 
@@ -127,13 +129,12 @@ def root() -> str:
         f"\n"
         f"Select a filter:\n"
         f"\n{YELLOW}"
-        f"{hyperlink('/section/master?fail_list=failed_tests_master', 'master queue')}\n"
-        f"{hyperlink('/section/staging?fail_list=failed_tests_staging', 'staging queue')}\n"
         f"{hyperlink('/section/next?fail_list=failed_tests_next', 'next queue')}\n"
         f"{hyperlink('/section/prs', 'prs')}\n"
         f"{hyperlink('/section/releases', 'releases')}\n"
         f"{hyperlink('/section/nightly', 'nightly')}\n"
         f"{hyperlink('/section/network', 'network')}\n"
+        f"{hyperlink('/section/deflake', 'deflake')}\n"
         f"{RESET}"
         f"\n"
         f"Benchmarks:\n"
@@ -391,6 +392,61 @@ def get_breakdown(runtime, flow_name, sha):
 
     return Response('{"error": "Breakdown not found"}', mimetype='application/json', status=404)
 
+
+@app.route('/grind')
+@auth.login_required
+def trigger_grind():
+    """Trigger a grind job for a flaky test."""
+    import hashlib
+    full_cmd = request.args.get('cmd')
+    commit = request.args.get('commit', 'HEAD')
+    confirmed = request.args.get('confirmed')
+
+    if not full_cmd:
+        return "Missing cmd parameter", 400
+
+    # Check if this grind was already requested in the last 24 hours
+    cache_key = f"grind:{hashlib.sha256(f'{full_cmd}:{commit}'.encode()).hexdigest()[:16]}"
+    existing_run_id = r.get(cache_key)
+    if existing_run_id:
+        existing_run_id = existing_run_id.decode() if isinstance(existing_run_id, bytes) else existing_run_id
+        return redirect(f'/{existing_run_id}')
+
+    # Show confirmation page first
+    if not confirmed:
+        from urllib.parse import urlencode as url_encode
+        confirm_url = f"/grind?{url_encode({'cmd': full_cmd, 'commit': commit, 'confirmed': '1'})}"
+        confirm_page = (
+            f"{BOLD}Grind Test{RESET}\n\n"
+            f"This will start a grind run for 10 minutes.\n\n"
+            f"Command:\n{PURPLE}{full_cmd}{RESET}\n\n"
+            f"Commit: {commit}\n\n"
+            f"{YELLOW}{hyperlink(confirm_url, 'Click here to proceed.')}{RESET}\n"
+        )
+        return render_template_string(TEMPLATE, value=ansi_to_html(confirm_page), filter_str='grind', follow='top')
+
+    # Generate unique run ID (16 hex chars)
+    run_id = uuid.uuid4().hex[:16]
+
+    # Initialize the log key so redirect doesn't show "Key not found"
+    r.setex(run_id, 86400, b'Starting grind...\n')
+
+    # Cache this grind request for 24 hours
+    r.setex(cache_key, 86400, run_id)
+
+    # Start grind job in background
+    # Dashboard server needs local repo checkout at REPO_PATH
+    repo_path = os.environ.get('REPO_PATH')
+    if repo_path:
+        subprocess.Popen(
+            ['bash', '-c', f'cd {repo_path} && RUN_ID={run_id} ./ci.sh grind-test "{full_cmd}" {commit}'],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True
+        )
+
+    # Redirect to log view.
+    return redirect(f'/{run_id}')
 
 @app.route('/<key>')
 @auth.login_required
