@@ -41,7 +41,7 @@ function grind {
     local joblog=$(mktemp)
 
     # Run for full timeout, logging all results (no --halt, collect all failure data)
-    awk 'BEGIN {i=1; while (1) print i++}' | timeout $timeout parallel --halt now,fail=10 --joblog "$joblog" -j $jobs --line-buffer "$par_cmd" || true
+    awk 'BEGIN {i=1; while (1) print i++}' | timeout $timeout parallel --memsuspend $(memsuspend_limit) --halt now,fail=10 --joblog "$joblog" -j $jobs --line-buffer "$par_cmd" || true
 
     # Check if any jobs failed (column 7 is exitval in joblog)
     if awk 'NR>1 && $7!=0 {found=1} END {exit !found}' "$joblog"; then
@@ -55,6 +55,7 @@ function grind {
 echo_header "grind test"
 echo "Full cmd: $full_cmd"
 echo "Make target: ${MAKEFILE_TARGET:-<none, full bootstrap>}"
+echo "Grind for: $timeout"
 echo "Commit: $commit"
 echo "Ref name: $REF_NAME"
 echo
