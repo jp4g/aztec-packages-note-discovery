@@ -129,7 +129,7 @@ def root() -> str:
         f"\n"
         f"Select a filter:\n"
         f"\n{YELLOW}"
-        f"{hyperlink('/section/next?fail_list=failed_tests_next', 'next queue')}\n"
+        f"{hyperlink('/section/next', 'next queue')}\n"
         f"{hyperlink('/section/prs', 'prs')}\n"
         f"{hyperlink('/section/releases', 'releases')}\n"
         f"{hyperlink('/section/nightly', 'nightly')}\n"
@@ -151,12 +151,11 @@ def section_view(section: str) -> str:
     limit = int(request.args.get('limit', 50))
     filter_str = request.args.get('filter', default='', type=str)
     filter_prop = request.args.get('filter_prop', default='', type=str)
-    fail_list = request.args.get('fail_list', default='', type=str)
 
     lines = update_status(offset, filter_str, filter_prop)
     lines += "\n"
     lines += f"Last {limit} ci runs on {section}:\n\n"
-    lines += get_section_data(section, offset, limit, filter_str, filter_prop, fail_list)
+    lines += get_section_data(section, offset, limit, filter_str, filter_prop)
     return lines
 
 TEMPLATE = """

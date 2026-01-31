@@ -18,7 +18,7 @@ trap 'git checkout $commit_tip' EXIT
 # Extract test parameters (hash_prefix, test_cmd, CPUS, TIMEOUT, MAKEFILE_TARGET, etc.)
 source $ci3/source_test_params
 
-GRIND_TIMEOUT=${GRIND_TIMEOUT:-600}
+GRIND_TIMEOUT=${GRIND_TIMEOUT:-10m}
 
 function checkout {
     git reset --hard $1 --quiet
@@ -38,7 +38,7 @@ function build {
 
 function grind {
     echo "Grinding for $GRIND_TIMEOUT seconds..."
-    local par_cmd="CI=0 run_test_cmd '${hash_prefix}:NAME=test-{} ${test_cmd}'"
+    local par_cmd="CI=0 TRACK_TEST_FAIL=1 run_test_cmd '${hash_prefix}:NAME=test-{} ${test_cmd}'"
     local joblog=$(mktemp)
 
     # Run for full timeout, logging all results (no --halt, collect all failure data)
