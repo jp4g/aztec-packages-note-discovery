@@ -1,5 +1,6 @@
 #include "barretenberg/dsl/acir_format/mock_verifier_inputs.hpp"
 #include "barretenberg/honk/proof_length.hpp"
+#include "barretenberg/honk/types/public_inputs_type.hpp"
 
 #include <gtest/gtest.h>
 
@@ -30,10 +31,25 @@ static_assert(ProofLength::Honk<UltraFlavor>::LENGTH_WITHOUT_PUB_INPUTS(UltraFla
 static_assert(ProofLength::Honk<UltraZKFlavor>::LENGTH_WITHOUT_PUB_INPUTS(UltraZKFlavor::VIRTUAL_LOG_N) == 492,
               "UltraZK Honk proof size changed");
 
+// Recursive proof sizes (proof + IO public inputs) - these are exported to Noir/TypeScript
+static_assert(ProofLength::Honk<UltraFlavor>::LENGTH_WITHOUT_PUB_INPUTS(UltraFlavor::VIRTUAL_LOG_N) +
+                      DEFAULT_PUBLIC_INPUTS_SIZE ==
+                  449,
+              "Ultra Honk recursive proof size changed (RECURSIVE_PROOF_LENGTH)");
+static_assert(ProofLength::Honk<UltraZKFlavor>::LENGTH_WITHOUT_PUB_INPUTS(UltraZKFlavor::VIRTUAL_LOG_N) +
+                      DEFAULT_PUBLIC_INPUTS_SIZE ==
+                  500,
+              "UltraZK Honk recursive proof size changed");
+static_assert(ProofLength::Honk<MegaZKFlavor>::LENGTH_WITHOUT_PUB_INPUTS(MegaZKFlavor::VIRTUAL_LOG_N) +
+                      HIDING_KERNEL_PUBLIC_INPUTS_SIZE ==
+                  435,
+              "MegaZK Honk hiding kernel proof size changed");
+
 static_assert(ProofLength::MultilinearBatching<MultilinearBatchingFlavor>::LENGTH == 121,
               "MultilinearBatching proof size changed");
 
 static_assert(ChonkProof::PROOF_LENGTH_WITHOUT_PUB_INPUTS == 1907, "Chonk proof size changed");
+static_assert(ChonkProof::PROOF_LENGTH == 1935, "Chonk proof size with public inputs changed (CHONK_PROOF_LENGTH)");
 
 /**
  * @brief Check that mock merge proof has the expected size
