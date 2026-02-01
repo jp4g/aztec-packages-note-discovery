@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769904737966,
+  "lastUpdate": 1769929779171,
   "repoUrl": "https://github.com/AztecProtocol/aztec-packages",
   "entries": {
     "Aztec Benchmarks": [
@@ -498439,6 +498439,568 @@ window.BENCHMARK_DATA = {
           {
             "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/mempool/tx_mined_delay_p50",
             "value": 51923.07692307693,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/mempool/tx_mined_delay_p95",
+            "value": 60000,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/mempool/attestation_mined_delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/mempool/attestation_mined_delay_p95",
+            "value": 0,
+            "unit": "ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Jan Beneš",
+            "username": "benesjan",
+            "email": "janbenes1234@gmail.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "d7ec707e6cdedc837d13774179acbde0d36e9810",
+          "message": "refactor: improving membership funcs naming (#20065)\n\nAs discussed on slack the naming of the `getArchiveMembershipWitness`\nfunction was not great so I renamed it to\n`getBlockHashMembershipWitness`.\n\nWith that the arg naming became weird so I changed it in all the\nendpoint functions.",
+          "timestamp": "2026-01-31T09:18:08Z",
+          "url": "https://github.com/AztecProtocol/aztec-packages/commit/d7ec707e6cdedc837d13774179acbde0d36e9810"
+        },
+        "date": 1769929682933,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/high_value_0.1tps/avg_inclusion",
+            "value": 46.64150943396226,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/high_value_0.1tps/median_inclusion",
+            "value": 47,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/high_value_0.1tps/p99_inclusion",
+            "value": 81,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/tx/p50",
+            "value": 296.06681034482756,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/tx/p95",
+            "value": 480.09159482758616,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 9.444444444444443,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 18.9375,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 93.56435643564356,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 243.28488372093022,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/attestation_latency/p50",
+            "value": 1750,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/attestation_latency/p95",
+            "value": 2425,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/attestation/success_count",
+            "value": 1628,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/attestation/failed_bad_proposal_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/attestation/failed_node_issue_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/attestation/success_ratio",
+            "value": 1,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/req_resp/txs_requested_fraction",
+            "value": 0,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/req_resp/delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/req_resp/delay_p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/peers/avg_count",
+            "value": 0,
+            "unit": "peers"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/peers/connection_duration_p50",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/peers/connection_duration_p95",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/mempool/tx_mined_delay_p50",
+            "value": 57321.42857142858,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/mempool/tx_mined_delay_p95",
+            "value": 60000,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/mempool/attestation_mined_delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_5_high_0_1/mempool/attestation_mined_delay_p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/high_value_0.1tps/avg_inclusion",
+            "value": 46.75,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/high_value_0.1tps/median_inclusion",
+            "value": 45,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/high_value_0.1tps/p99_inclusion",
+            "value": 83,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/tx/p50",
+            "value": 148.71134020618553,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/tx/p95",
+            "value": 474.44817658349325,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 8.88888888888889,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 22.999999999999986,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 72.61146496815286,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 223.48484848484844,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/attestation_latency/p50",
+            "value": 3750,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/attestation_latency/p95",
+            "value": 4875,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/attestation/success_count",
+            "value": 2860,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/attestation/failed_bad_proposal_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/attestation/failed_node_issue_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/attestation/success_ratio",
+            "value": 1,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/req_resp/txs_requested_fraction",
+            "value": 0,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/req_resp/delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/req_resp/delay_p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/peers/avg_count",
+            "value": 0,
+            "unit": "peers"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/peers/connection_duration_p50",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/peers/connection_duration_p95",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/mempool/tx_mined_delay_p50",
+            "value": 36750,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/mempool/tx_mined_delay_p95",
+            "value": 60000,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/mempool/attestation_mined_delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_1_high_0_1/mempool/attestation_mined_delay_p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/high_value_0.1tps/avg_inclusion",
+            "value": 46.35,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/high_value_0.1tps/median_inclusion",
+            "value": 45,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/high_value_0.1tps/p99_inclusion",
+            "value": 81,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/tx/p50",
+            "value": 256.35593220338984,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/tx/p95",
+            "value": 485.1694915254237,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 14.583333333333332,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 28.624999999999986,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 91.3157894736842,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 367.12328767123245,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/attestation_latency/p50",
+            "value": 1750,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/attestation_latency/p95",
+            "value": 2425,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/attestation/success_count",
+            "value": 528,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/attestation/failed_bad_proposal_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/attestation/failed_node_issue_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/attestation/success_ratio",
+            "value": 1,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/req_resp/txs_requested_fraction",
+            "value": 0,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/req_resp/delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/req_resp/delay_p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/peers/avg_count",
+            "value": 0,
+            "unit": "peers"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/peers/connection_duration_p50",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/peers/connection_duration_p95",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/mempool/tx_mined_delay_p50",
+            "value": 35607.476635514024,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/mempool/tx_mined_delay_p95",
+            "value": 60000,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/mempool/attestation_mined_delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_1_high_0_1/mempool/attestation_mined_delay_p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/high_value_0.1tps/avg_inclusion",
+            "value": 45.59322033898305,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/high_value_0.1tps/median_inclusion",
+            "value": 46,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/high_value_0.1tps/p99_inclusion",
+            "value": 80,
+            "unit": "s"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/tx/p50",
+            "value": 309.5238095238095,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/tx/p95",
+            "value": 488.0952380952381,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/block_proposal/p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/block_proposal/p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/checkpoint_proposal/p50",
+            "value": 5.714285714285715,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/checkpoint_proposal/p95",
+            "value": 16,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/checkpoint_attestation/p50",
+            "value": 81.85483870967742,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/p2p_gossip_latency/checkpoint_attestation/p95",
+            "value": 230.14388489208633,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/attestation_latency/p50",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/attestation_latency/p95",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/attestation/success_count",
+            "value": 1020,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/attestation/failed_bad_proposal_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/attestation/failed_node_issue_count",
+            "value": 0,
+            "unit": "count"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/attestation/success_ratio",
+            "value": 1,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/req_resp/txs_requested_fraction",
+            "value": 0,
+            "unit": "ratio"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/req_resp/delay_p50",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/req_resp/delay_p95",
+            "value": 0,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/peers/avg_count",
+            "value": 0,
+            "unit": "peers"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/peers/connection_duration_p50",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/peers/connection_duration_p95",
+            "value": null,
+            "unit": "ms"
+          },
+          {
+            "name": "yarn-project/end-to-end/scenario/low_0_2_high_0_1/mempool/tx_mined_delay_p50",
+            "value": 33750.00000000001,
             "unit": "ms"
           },
           {
