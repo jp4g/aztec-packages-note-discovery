@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769938292286,
+  "lastUpdate": 1769939935775,
   "repoUrl": "https://github.com/AztecProtocol/aztec-packages",
   "entries": {
     "Aztec Benchmarks": [
@@ -161,6 +161,50 @@ window.BENCHMARK_DATA = {
           {
             "name": "spartan/ci/network_deploy/eth_devnet",
             "value": 135,
+            "unit": "seconds"
+          },
+          {
+            "name": "spartan/ci/network_deploy/rollup_contracts",
+            "value": 54,
+            "unit": "seconds"
+          },
+          {
+            "name": "spartan/ci/network_deploy/aztec_infra",
+            "value": 123,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "janbenes1234@gmail.com",
+            "name": "Jan Beneš",
+            "username": "benesjan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d7ec707e6cdedc837d13774179acbde0d36e9810",
+          "message": "refactor: improving membership funcs naming (#20065)\n\nAs discussed on slack the naming of the `getArchiveMembershipWitness`\nfunction was not great so I renamed it to\n`getBlockHashMembershipWitness`.\n\nWith that the arg naming became weird so I changed it in all the\nendpoint functions.",
+          "timestamp": "2026-01-31T09:18:08Z",
+          "tree_id": "587ec6841a0ce8e1722d45b6a493bb562298421d",
+          "url": "https://github.com/AztecProtocol/aztec-packages/commit/d7ec707e6cdedc837d13774179acbde0d36e9810"
+        },
+        "date": 1769939824878,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "spartan/ci/network_deploy/total",
+            "value": 429,
+            "unit": "seconds"
+          },
+          {
+            "name": "spartan/ci/network_deploy/eth_devnet",
+            "value": 133,
             "unit": "seconds"
           },
           {
