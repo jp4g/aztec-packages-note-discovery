@@ -444,8 +444,8 @@ pub global FEE_RECIPIENT_LENGTH: u32 = 2;
 // The hiding kernel IO public inputs consist of pairing_inputs and table_commitments.
 // They are independent of the circuit's custom public inputs.
 pub global HIDING_KERNEL_IO_PUBLIC_INPUTS_SIZE: u32 = 56;
-pub global PAIRING_POINTS_SIZE: u32 = 16;
-pub global IPA_CLAIM_SIZE: u32 = 10;
+pub global PAIRING_POINTS_SIZE: u32 = 8;
+pub global IPA_CLAIM_SIZE: u32 = 6;
 
 pub global PUBLIC_DATA_READ_LENGTH: u32 = 3;
 // The `(... + 1)` is because these arrays include a `length` field.
