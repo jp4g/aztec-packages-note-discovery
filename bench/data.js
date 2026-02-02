@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769939935775,
+  "lastUpdate": 1770024377329,
   "repoUrl": "https://github.com/AztecProtocol/aztec-packages",
   "entries": {
     "Aztec Benchmarks": [
@@ -215,6 +215,48 @@ window.BENCHMARK_DATA = {
           {
             "name": "spartan/ci/network_deploy/aztec_infra",
             "value": 123,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tech@aztecprotocol.com",
+            "name": "AztecBot"
+          },
+          "committer": {
+            "email": "tech@aztecprotocol.com",
+            "name": "AztecBot"
+          },
+          "distinct": true,
+          "id": "0319115d88812d61771a1856448aa8d1c9e9df73",
+          "message": "chore(docs): cut new aztec and bb docs version for tag v4.0.0-nightly.20260201",
+          "timestamp": "2026-02-01T05:35:46Z",
+          "tree_id": "d0eba479de7a4bcdd95a5908a574e3c48c92f45a",
+          "url": "https://github.com/AztecProtocol/aztec-packages/commit/0319115d88812d61771a1856448aa8d1c9e9df73"
+        },
+        "date": 1770024275480,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "spartan/ci/network_deploy/total",
+            "value": 372,
+            "unit": "seconds"
+          },
+          {
+            "name": "spartan/ci/network_deploy/eth_devnet",
+            "value": 101,
+            "unit": "seconds"
+          },
+          {
+            "name": "spartan/ci/network_deploy/rollup_contracts",
+            "value": 54,
+            "unit": "seconds"
+          },
+          {
+            "name": "spartan/ci/network_deploy/aztec_infra",
+            "value": 98,
             "unit": "seconds"
           }
         ]
