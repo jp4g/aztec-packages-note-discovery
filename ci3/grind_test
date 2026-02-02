@@ -11,7 +11,7 @@ full_cmd="$1"
 timeout="${2:-10m}"
 commit_tip=$(git rev-parse HEAD)
 commit="${3:-$commit_tip}"
-jobs=$(($(nproc) * 4))
+jobs=$(($(nproc) * 2))
 
 # Ensure we return to the original commit on exit.
 trap 'git checkout $commit_tip' EXIT
