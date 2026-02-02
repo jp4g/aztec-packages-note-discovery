@@ -441,9 +441,10 @@ pub global PRIVATE_CONTEXT_INPUTS_LENGTH: u32 =
 pub global FEE_RECIPIENT_LENGTH: u32 = 2;
 
 // TODO: Leila's considering moving this into a noir file within bb
-// The hiding kernel IO public inputs consist of pairing_inputs and table_commitments.
+// The hiding kernel IO public inputs consist of pairing_inputs, kernel_return_data, and table_commitments.
 // They are independent of the circuit's custom public inputs.
-pub global HIDING_KERNEL_IO_PUBLIC_INPUTS_SIZE: u32 = 56;
+// Formula: PAIRING_POINTS_SIZE (8) + kernel_return_data (4) + table_commitments (4 wires × 4 = 16) = 28
+pub global HIDING_KERNEL_IO_PUBLIC_INPUTS_SIZE: u32 = 28;
 pub global PAIRING_POINTS_SIZE: u32 = 8;
 pub global IPA_CLAIM_SIZE: u32 = 6;
 
