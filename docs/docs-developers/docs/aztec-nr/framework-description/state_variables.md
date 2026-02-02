@@ -273,7 +273,6 @@ When working with private state variables, many operations return a `NoteMessage
 #### Delivery Methods
 
 Private notes need to be communicated to their recipients so they know the note exists and can use it. The [`NoteMessage`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/note/struct.notemessage) wrapper forces you to make an explicit choice about how this happens:
-[
   - `MessageDelivery.ONCHAIN_CONSTRAINED`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/messages/message_delivery/struct.messagedeliveryenum#structfield.ONCHAIN_UNCONSTRAINED): Verified in the circuit (most secure, but highest cost) - Use when the sender cannot be trusted to deliver correctly (e.g., protocol fees, multisig config updates). **Warning:** Currently [not fully constrained](https://github.com/AztecProtocol/aztec-packages/issues/14565) - the log's tag is unconstrained.
   - [`MessageDelivery.ONCHAIN_UNCONSTRAINED`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/messages/message_delivery/struct.messagedeliveryenum#structfield.ONCHAIN_UNCONSTRAINED): Message stored onchain but no guarantees on content - Use when the sender is incentivized to deliver correctly but may not have an offchain channel to the recipient.
   - [`MessageDelivery.OFFCHAIN`](https://docs.aztec.network/aztec-nr-api/nightly/noir_aztec/messages/message_delivery/struct.messagedeliveryenum#structfield.OFFCHAIN): Lowest cost, no onchain data - Use when the sender and recipient can communicate and the sender is incentivized to deliver correctly.
