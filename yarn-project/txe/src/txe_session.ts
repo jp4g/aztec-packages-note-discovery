@@ -51,6 +51,7 @@ import { TXEOracleTopLevelContext } from './oracle/txe_oracle_top_level_context.
 import { RPCTranslator } from './rpc_translator.js';
 import { TXEStateMachine } from './state_machine/index.js';
 import type { ForeignCallArgs, ForeignCallResult } from './util/encoding.js';
+import { NoopContractSyncService } from './util/noop_contract_sync_service.js';
 import { TXEAccountStore } from './util/txe_account_store.js';
 import { TXEContractStore } from './util/txe_contract_store.js';
 import { getSingleTxBlockRequestHash, insertTxEffectIntoWorldTrees, makeTXEBlock } from './utils/block_creation.js';
@@ -356,6 +357,7 @@ export class TXESession implements TXESessionStateHandler {
       this.senderAddressBookStore,
       this.capsuleStore,
       this.privateEventStore,
+      new NoopContractSyncService(),
       this.currentJobId,
     );
 

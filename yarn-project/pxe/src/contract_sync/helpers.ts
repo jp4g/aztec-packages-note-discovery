@@ -58,9 +58,12 @@ export async function syncState(
 /**
  * Verify that the current class id of a contract obtained from AztecNode is the same as the one in contract data
  * provider (i.e. PXE's own storage).
+ * @param contractAddress - The address of the contract to verify.
+ * @param aztecNode - The Aztec node to query for storage.
+ * @param contractStore - The contract store to fetch the local instance from.
  * @param header - The header of the block at which to verify the current class id.
  */
-async function verifyCurrentClassId(
+export async function verifyCurrentClassId(
   contractAddress: AztecAddress,
   aztecNode: AztecNode,
   contractStore: ContractStore,
@@ -77,22 +80,4 @@ async function verifyCurrentClassId(
       `Contract ${contractAddress} is outdated, current class id is ${currentClassId}, local class id is ${instance.currentContractClassId}`,
     );
   }
-}
-
-/**
- * Ensures the contract's private state is synchronized and that the PXE holds the current class artifact for
- * the contract.
- */
-export async function ensureContractSynced(
-  contractAddress: AztecAddress,
-  functionToInvokeAfterSync: FunctionSelector | null,
-  utilityExecutor: (call: FunctionCall) => Promise<any>,
-  aztecNode: AztecNode,
-  contractStore: ContractStore,
-  header: BlockHeader,
-): Promise<void> {
-  await Promise.all([
-    syncState(contractAddress, contractStore, functionToInvokeAfterSync, utilityExecutor),
-    verifyCurrentClassId(contractAddress, aztecNode, contractStore, header),
-  ]);
 }

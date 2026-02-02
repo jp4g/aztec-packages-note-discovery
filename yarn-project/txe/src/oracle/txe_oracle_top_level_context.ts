@@ -83,6 +83,7 @@ import { ForkCheckpoint } from '@aztec/world-state';
 
 import { DEFAULT_ADDRESS } from '../constants.js';
 import type { TXEStateMachine } from '../state_machine/index.js';
+import { NoopContractSyncService } from '../util/noop_contract_sync_service.js';
 import type { TXEAccountStore } from '../util/txe_account_store.js';
 import type { TXEContractStore } from '../util/txe_contract_store.js';
 import { TXEPublicContractDataSource } from '../util/txe_public_contract_data_source.js';
@@ -351,6 +352,7 @@ export class TXEOracleTopLevelContext implements IMiscOracle, ITxeExecutionOracl
       this.senderAddressBookStore,
       this.capsuleStore,
       this.privateEventStore,
+      new NoopContractSyncService(),
       this.jobId,
       0, // totalPublicArgsCount
       minRevertibleSideEffectCounter, // (start) sideEffectCounter
