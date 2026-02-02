@@ -94,7 +94,7 @@ pub contract MyContract {
         // A private numeric value which can change over time. This value will be hidden, and only those with the secret can know its current value.
         my_private_state_variable: Owned<PrivateMutable<NoteType, Context>>,
         // A public numeric value which can change over time. This value will be known to everyone and is equivalent to the Solidity example above.
-        my_public_state_variable: Owned<PublicMutable<NoteType, Context>>,
+        my_public_state_variable: PublicMutable<u256, Context>,
     }
 }
 ```
