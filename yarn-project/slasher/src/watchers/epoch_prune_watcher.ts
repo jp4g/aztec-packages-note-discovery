@@ -173,6 +173,7 @@ export class EpochPruneWatcher extends (EventEmitter as new () => WatcherEmitter
     const checkpointBuilder = await this.checkpointsBuilder.startCheckpoint(
       checkpointNumber,
       constants,
+      0n, // feeAssetPriceModifier is not used for validation of the block
       l1ToL2Messages,
       previousCheckpointOutHashes,
       fork,
