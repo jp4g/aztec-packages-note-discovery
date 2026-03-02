@@ -14,6 +14,16 @@
         "default": "./dest/embedded/entrypoints/node.js"
       }
     },
+    "./auditable": {
+      "browser": {
+        "types": "./dest/auditable/entrypoints/browser.d.ts",
+        "default": "./dest/auditable/entrypoints/browser.js"
+      },
+      "default": {
+        "types": "./dest/auditable/entrypoints/node.d.ts",
+        "default": "./dest/auditable/entrypoints/node.js"
+      }
+    },
     "./testing": "./dest/testing.js"
   },
   "scripts": {

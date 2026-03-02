@@ -32,6 +32,7 @@ import type {
   PrivateKernelExecutionProofOutput,
   PrivateKernelTailCircuitPublicInputs,
 } from '@aztec/stdlib/kernel';
+import { DirectionalAppTaggingSecret } from '@aztec/stdlib/logs';
 import {
   BlockHeader,
   type ContractOverrides,
@@ -1129,9 +1130,103 @@ export class PXE {
   }
 
   /**
+   * Export tagging secrets for a given account and set of apps.
+   *
+   * These secrets allow an auditor to discover which notes belong to the user
+   * without being able to decrypt them.
+   *
+   * @param account - The account to export secrets for
+   * @param apps - Contract addresses to export secrets for
+   * @param counterparties - Optional explicit list of counterparties. If not provided,
+   *                         uses registered senders + own accounts.
+   * @returns A serializable export containing all tagging secrets
+   */
+  public async exportTaggingSecrets(
+    account: AztecAddress,
+    apps: AztecAddress[],
+    counterparties?: AztecAddress[],
+  ): Promise<TaggingSecretExport> {
+    const accountCompleteAddress = await this.addressStore.getCompleteAddress(account);
+    if (!accountCompleteAddress) {
+      throw new Error(`Account ${account.toString()} not found in address book`);
+    }
+
+    const ivsk = await this.keyStore.getMasterIncomingViewingSecretKey(account);
+
+    const explicitCounterparties = !!counterparties;
+    const allCounterparties = counterparties ?? [
+      ...(await this.getSenders()),
+      ...(await this.keyStore.getAccounts()).filter(a => !a.equals(account)),
+    ];
+
+    const secrets: TaggingSecretEntry[] = [];
+
+    for (const app of apps) {
+      for (const counterparty of allCounterparties) {
+        if (!explicitCounterparties && counterparty.equals(account)) {
+          continue;
+        }
+
+        const inboundSecret = await DirectionalAppTaggingSecret.compute(
+          accountCompleteAddress,
+          ivsk,
+          counterparty,
+          app,
+          account,
+        );
+        secrets.push({
+          secret: inboundSecret,
+          direction: 'inbound' as NoteDirection,
+          counterparty,
+          app,
+        });
+
+        const outboundSecret = await DirectionalAppTaggingSecret.compute(
+          accountCompleteAddress,
+          ivsk,
+          counterparty,
+          app,
+          counterparty,
+        );
+        secrets.push({
+          secret: outboundSecret,
+          direction: 'outbound' as NoteDirection,
+          counterparty,
+          app,
+        });
+      }
+    }
+
+    return {
+      account,
+      secrets,
+      exportedAt: Date.now(),
+    };
+  }
+
+  /**
    * Stops the PXE's job queue.
    */
   public stop(): Promise<void> {
     return this.jobQueue.end();
   }
+}
+
+/** Direction of note flow relative to the user. */
+export type NoteDirection = 'inbound' | 'outbound';
+
+/** A tagging secret with metadata about its direction and counterparty. */
+export interface TaggingSecretEntry {
+  secret: DirectionalAppTaggingSecret;
+  direction: NoteDirection;
+  counterparty: AztecAddress;
+  app: AztecAddress;
+  label?: string;
+}
+
+/** Complete export of tagging secrets for an account. */
+export interface TaggingSecretExport {
+  account: AztecAddress;
+  secrets: TaggingSecretEntry[];
+  exportedAt: number;
 }
