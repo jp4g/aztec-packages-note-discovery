@@ -1176,8 +1176,8 @@ export class PXE {
           ExtendedDirectionalAppTaggingSecret.compute(accountCompleteAddress, ivsk, counterparty, app, counterparty),
         ]);
         return [
-          { secret: inboundSecret, direction: 'inbound' as NoteDirection, counterparty },
-          { secret: outboundSecret, direction: 'outbound' as NoteDirection, counterparty },
+          { secret: inboundSecret, direction: 'inbound', counterparty },
+          { secret: outboundSecret, direction: 'outbound', counterparty },
         ];
       }),
     );
