@@ -5,7 +5,7 @@ import type { DefaultAccountEntrypointOptions } from '@aztec/entrypoints/account
 import { Fq, Fr } from '@aztec/foundation/curves/bn254';
 import type { Logger } from '@aztec/foundation/log';
 import type { AccessScopes, PXEConfig, PXECreationOptions } from '@aztec/pxe/client/lazy';
-import type { PXE, TaggingSecretExport } from '@aztec/pxe/server';
+import type { ExportedTaggingSecret, PXE } from '@aztec/pxe/server';
 import { AztecAddress } from '@aztec/stdlib/aztec-address';
 import { getContractInstanceFromInstantiationParams } from '@aztec/stdlib/contract';
 import type { AztecNode } from '@aztec/stdlib/interfaces/client';
@@ -225,7 +225,7 @@ export class EmbeddedWallet extends BaseWallet {
     account: AztecAddress,
     apps: AztecAddress[],
     counterparties?: AztecAddress[],
-  ): Promise<TaggingSecretExport> {
+  ): Promise<ExportedTaggingSecret[]> {
     return this.pxe.exportTaggingSecrets(account, apps, counterparties);
   }
 

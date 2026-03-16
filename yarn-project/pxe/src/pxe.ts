@@ -32,7 +32,7 @@ import type {
   PrivateKernelExecutionProofOutput,
   PrivateKernelTailCircuitPublicInputs,
 } from '@aztec/stdlib/kernel';
-import { DirectionalAppTaggingSecret } from '@aztec/stdlib/logs';
+import { ExtendedDirectionalAppTaggingSecret } from '@aztec/stdlib/logs';
 import {
   BlockHeader,
   type ContractOverrides,
@@ -1145,7 +1145,7 @@ export class PXE {
     account: AztecAddress,
     apps: AztecAddress[],
     counterparties?: AztecAddress[],
-  ): Promise<TaggingSecretExport> {
+  ): Promise<ExportedTaggingSecret[]> {
     const accountCompleteAddress = await this.addressStore.getCompleteAddress(account);
     if (!accountCompleteAddress) {
       throw new Error(`Account ${account.toString()} not found in address book`);
@@ -1159,49 +1159,30 @@ export class PXE {
       ...(await this.keyStore.getAccounts()).filter(a => !a.equals(account)),
     ];
 
-    const secrets: TaggingSecretEntry[] = [];
-
+    const pairs: { app: AztecAddress; counterparty: AztecAddress }[] = [];
     for (const app of apps) {
       for (const counterparty of allCounterparties) {
         if (!explicitCounterparties && counterparty.equals(account)) {
           continue;
         }
-
-        const inboundSecret = await DirectionalAppTaggingSecret.compute(
-          accountCompleteAddress,
-          ivsk,
-          counterparty,
-          app,
-          account,
-        );
-        secrets.push({
-          secret: inboundSecret,
-          direction: 'inbound' as NoteDirection,
-          counterparty,
-          app,
-        });
-
-        const outboundSecret = await DirectionalAppTaggingSecret.compute(
-          accountCompleteAddress,
-          ivsk,
-          counterparty,
-          app,
-          counterparty,
-        );
-        secrets.push({
-          secret: outboundSecret,
-          direction: 'outbound' as NoteDirection,
-          counterparty,
-          app,
-        });
+        pairs.push({ app, counterparty });
       }
     }
 
-    return {
-      account,
-      secrets,
-      exportedAt: Date.now(),
-    };
+    const nested = await Promise.all(
+      pairs.map(async ({ app, counterparty }) => {
+        const [inboundSecret, outboundSecret] = await Promise.all([
+          ExtendedDirectionalAppTaggingSecret.compute(accountCompleteAddress, ivsk, counterparty, app, account),
+          ExtendedDirectionalAppTaggingSecret.compute(accountCompleteAddress, ivsk, counterparty, app, counterparty),
+        ]);
+        return [
+          { secret: inboundSecret, direction: 'inbound' as NoteDirection, counterparty },
+          { secret: outboundSecret, direction: 'outbound' as NoteDirection, counterparty },
+        ];
+      }),
+    );
+
+    return nested.flat();
   }
 
   /**
@@ -1216,17 +1197,8 @@ export class PXE {
 export type NoteDirection = 'inbound' | 'outbound';
 
 /** A tagging secret with metadata about its direction and counterparty. */
-export interface TaggingSecretEntry {
-  secret: DirectionalAppTaggingSecret;
+export interface ExportedTaggingSecret {
+  secret: ExtendedDirectionalAppTaggingSecret;
   direction: NoteDirection;
   counterparty: AztecAddress;
-  app: AztecAddress;
-  label?: string;
-}
-
-/** Complete export of tagging secrets for an account. */
-export interface TaggingSecretExport {
-  account: AztecAddress;
-  secrets: TaggingSecretEntry[];
-  exportedAt: number;
 }
