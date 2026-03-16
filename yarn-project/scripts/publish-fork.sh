@@ -41,16 +41,18 @@ echo "Upstream base:     $UPSTREAM_VERSION"
 echo "Registry:          $REGISTRY"
 echo ""
 
+if [[ "${SKIP_BUILD:-}" != "1" ]]; then
+  echo "Building yarn-project..."
+  (cd "$YARN_PROJECT" && yarn build)
+  echo ""
+else
+  echo "Skipping build (SKIP_BUILD=1)"
+  echo ""
+fi
+
 for pkg in "${PACKAGES[@]}"; do
   dir="$YARN_PROJECT/$pkg"
   PUBLISH_NAME="$SCOPE/aztec-$pkg"
-
-  if [[ ! -d "$dir/dest" ]]; then
-    echo "Building $pkg..."
-    (cd "$dir" && yarn build)
-  else
-    echo "Using existing build for $pkg (dest/ exists)"
-  fi
 
   # Create temp publish directory
   tmp=$(mktemp -d)
