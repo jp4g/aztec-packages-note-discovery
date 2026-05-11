@@ -8,7 +8,7 @@ import { DefaultEntrypoint } from '@aztec/entrypoints/default';
 import { Fq, Fr } from '@aztec/foundation/curves/bn254';
 import type { Logger } from '@aztec/foundation/log';
 import type { PXEConfig, PXECreationOptions } from '@aztec/pxe/client/lazy';
-import type { PXE } from '@aztec/pxe/server';
+import type { ExportedTaggingSecret, PXE } from '@aztec/pxe/server';
 import { AztecAddress } from '@aztec/stdlib/aztec-address';
 import { getContractInstanceFromInstantiationParams } from '@aztec/stdlib/contract';
 import { GasSettings } from '@aztec/stdlib/gas';
@@ -347,6 +347,14 @@ export class EmbeddedWallet extends BaseWallet {
 
   setEstimatedGasPadding(value?: number) {
     this.estimatedGasPadding = value ?? DEFAULT_ESTIMATED_GAS_PADDING;
+  }
+
+  async exportTaggingSecrets(
+    account: AztecAddress,
+    apps: AztecAddress[],
+    counterparties?: AztecAddress[],
+  ): Promise<ExportedTaggingSecret[]> {
+    return this.pxe.exportTaggingSecrets(account, apps, counterparties);
   }
 
   stop() {
